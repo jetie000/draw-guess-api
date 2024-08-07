@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String
+  password     String
+  username     String
+  role         Int
+  access       Boolean
+  avatarUrl    String
+  refreshToken String
+  joinDate     DateTime
+  loginDate    DateTime
+  gamePlayers  GamePlayer[]
+  createdGames Game[]
+}
+
+model Game {
+  id        Int          @id @default(autoincrement())
+  code      String
+  creator   User         @relation(fields: [creatorId], references: [id])
+  creatorId Int
+  drawings  Drawing[]
+  players   GamePlayer[]
+  isEnded   Boolean
+  startDate DateTime
+  endDate   DateTime
+}
+
+model DrawingPart {
+  id          Int     @id @default(autoincrement())
+  type        String
+  lineWidth   Int
+  strokeColor String
+  fillColor   String
+  posX        Int[]
+  posY        Int[]
+  drawing     Drawing @relation(fields: [drawingId], references: [id])
+  drawingId   Int
+}
+
+model DrawingMessage {
+  id           Int        @id @default(autoincrement())
+  sender       GamePlayer @relation(fields: [gamePlayerId], references: [id])
+  drawing      Drawing    @relation(fields: [drawingId], references: [id])
+  drawingId    Int
+  sendDate     DateTime
+  message      String
+  gamePlayerId Int
+}
+
+model Drawing {
+  id           Int              @id @default(autoincrement())
+  drawingParts DrawingPart[]
+  messages     DrawingMessage[]
+  endDate      DateTime
+  gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
+  gamePlayerId Int
+  game         Game             @relation(fields: [gameId], references: [id])
+  gameId       Int
+}
+
+model GamePlayer {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId          Int
+  game   Game @relation(fields: [gameId], references: [id])
+  gameId          Int
+  points Int
+  drawingMessages DrawingMessage[]
+  drawings        Drawing[]
+}
