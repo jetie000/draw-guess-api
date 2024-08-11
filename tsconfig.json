@@ -12,11 +12,8 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
     "paths": {
       "@app/common": [
         "libs/common/src"

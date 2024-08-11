@@ -1,0 +1,64 @@
+services:
+  account:
+    build:
+      context: .
+      dockerfile: ./apps/account/Dockerfile
+    ports:
+      - '3000:3000'
+    env_file:
+      - ./.env.development.docker
+    depends_on:
+      - db
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  drawing:
+    build:
+      context: .
+      dockerfile: ./apps/drawing/Dockerfile
+    ports:
+      - '3001:3001'
+    env_file:
+      - ./.env.development.docker
+    depends_on:
+      - db
+      - rabbitmq
+      - account
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  game:
+    build:
+      context: .
+      dockerfile: ./apps/game/Dockerfile
+    ports:
+      - '3002:3002'
+    env_file:
+      - ./.env.development.docker
+    depends_on:
+      - db
+      - rabbitmq
+      - drawing
+      - account
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    env_file:
+      - ./.env.development.docker
+    ports:
+      - 5431:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
+    name: nest-prisma-docker-db
