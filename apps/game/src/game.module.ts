@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
-import { CommonModule } from '@app/common';
-import { PrismaModule } from '@app/prisma';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '@app/common';
+import { RmqModule } from '@app/common/rmq/rmq.module';
 
 @Module({
-  imports: [CommonModule, PrismaModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: './.env.development',
+    }),
+    PrismaModule,
+    RmqModule,
+  ],
   controllers: [GameController],
   providers: [GameService],
 })

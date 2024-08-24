@@ -1,5 +1,5 @@
 {
-  "prisma.schemaPath": "/libs/prisma/src/schema.prisma",
+  "prisma.schemaPath": "/libs/common/src/prisma/schema.prisma",
   "prettier.configPath": ".prettierrc",
   "files.autoSave": "onFocusChange",
 }

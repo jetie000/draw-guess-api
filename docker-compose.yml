@@ -13,6 +13,7 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
+
   drawing:
     build:
       context: .
@@ -28,6 +29,7 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
+
   game:
     build:
       context: .
@@ -44,10 +46,12 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
+
   rabbitmq:
     image: rabbitmq
     ports:
       - '5672:5672'
+
   db:
     image: postgres
     restart: always
