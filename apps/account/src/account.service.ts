@@ -13,11 +13,15 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { compare, hash } from 'bcrypt';
 import { randomCode } from '@app/common/helpers/random';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CODE_LENGTH } from '@app/common/helpers/constants';
+import path from 'path';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleService } from './google.service';
+import { JwtPayload } from './typings/interfaces/jwt-payload.interface';
+import { AccountType } from './typings/enums';
 
 @Injectable()
 export class AccountService {
@@ -26,6 +30,7 @@ export class AccountService {
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
+    private readonly googleService: GoogleService,
     @Inject(DRAWING_RABBITMQ_QUEUE) private drawingClient: ClientProxy
   ) {}
 
@@ -50,6 +55,7 @@ export class AccountService {
     const user = await this.prismaService.user.findFirst({
       where: {
         email: signInDto.email,
+        type: AccountType.EMAIL,
       },
     });
 
@@ -61,7 +67,7 @@ export class AccountService {
       throw new UnauthorizedException('User is blocked');
     }
 
-    const isEqualPasswords = compare(signInDto.password, user.password);
+    const isEqualPasswords = await compare(signInDto.password, user.password);
     if (!isEqualPasswords) {
       throw new UnauthorizedException('Wrong password');
     }
@@ -69,6 +75,7 @@ export class AccountService {
     const tokens = await this.generateTokens({
       username: user.username,
       email: user.email,
+      type: AccountType.EMAIL,
     });
 
     await this.prismaService.user.update({
@@ -84,6 +91,65 @@ export class AccountService {
     return tokens;
   }
 
+  async signInGoogle(googleToken: string) {
+    const googleInfo = await this.googleService.verifyCode(googleToken);
+    const tokens = await this.generateTokens({
+      username: googleInfo.name,
+      email: googleInfo.email,
+      type: AccountType.GOOGLE,
+    });
+    const hashedPassword = await hash(
+      googleInfo.sub,
+      this.configService.get('HASH_SALT')
+    );
+
+    const userTofind = await this.prismaService.user.findFirst({
+      where: {
+        email: googleInfo.email,
+      },
+    });
+
+    if (!userTofind) {
+      await this.prismaService.user.create({
+        data: {
+          email: googleInfo.email,
+          username: googleInfo.name,
+          password: hashedPassword,
+          joinDate: new Date(),
+          loginDate: new Date(),
+          refreshToken: tokens.refreshToken,
+          access: true,
+          avatarUrl: googleInfo.picture,
+          role: 0,
+          type: AccountType.GOOGLE,
+        },
+      });
+
+      return tokens;
+    } else {
+      if (userTofind.type !== AccountType.GOOGLE) {
+        throw new UnauthorizedException('User is registered without google');
+      }
+      if (userTofind.access === false) {
+        throw new UnauthorizedException('User is blocked');
+      }
+      if (userTofind.password !== hashedPassword) {
+        throw new UnauthorizedException('Wrong credentials');
+      }
+      await this.prismaService.user.update({
+        where: {
+          id: userTofind.id,
+        },
+        data: {
+          loginDate: new Date(),
+          refreshToken: tokens.refreshToken,
+        },
+      });
+
+      return tokens;
+    }
+  }
+
   async signUp(signUpDto: SignUpDto) {
     const userToFind = await this.prismaService.user.findFirst({
       where: {
@@ -95,10 +161,14 @@ export class AccountService {
       throw new BadRequestException('User with this email already exists');
     }
 
-    const hashPassword = await hash(signUpDto.password, 10);
+    const hashPassword = await hash(
+      signUpDto.password,
+      this.configService.get('HASH_SALT')
+    );
     const tokens = await this.generateTokens({
       username: signUpDto.username,
       email: signUpDto.email,
+      type: AccountType.EMAIL,
     });
 
     await this.prismaService.user.create({
@@ -120,6 +190,7 @@ export class AccountService {
     const user = await this.prismaService.user.findFirst({
       where: {
         email: email,
+        type: AccountType.EMAIL,
       },
     });
     if (!user) {
@@ -140,7 +211,38 @@ export class AccountService {
       to: email,
       from: this.configService.get('SMTP_USER'),
       subject: 'Reset password request',
-      html: `Your code is <b>${code}</b>`,
+      template: path.join(__dirname, 'templates', 'reset-password.hbs'),
+      context: {
+        code: code,
+      },
+    });
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        email: resetPasswordDto.email,
+        type: AccountType.EMAIL,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.resetCode !== resetPasswordDto.code) {
+      throw new BadRequestException('Wrong code');
+    }
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: await hash(
+          resetPasswordDto.password,
+          this.configService.get('HASH_SALT')
+        ),
+        resetCode: null,
+      },
     });
   }
 }

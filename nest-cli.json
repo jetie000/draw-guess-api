@@ -5,7 +5,14 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/account/tsconfig.app.json"
+    "tsConfigPath": "apps/account/tsconfig.app.json",
+    "assets": [
+      {
+        "include": "templates/*",
+        "outDir": "dist/apps/account",
+        "watchAssets": true
+      }
+    ]
   },
   "monorepo": true,
   "root": "apps/account",

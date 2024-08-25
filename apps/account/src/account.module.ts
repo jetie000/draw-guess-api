@@ -10,6 +10,8 @@ import {
 } from '@app/common/rmq/constants';
 import { JwtModule } from '@nestjs/jwt';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { GoogleService } from './google.service';
 
 @Module({
   imports: [
@@ -38,6 +40,12 @@ import { MailerModule } from '@nestjs-modules/mailer';
         defaults: {
           from: '"nest-modules" <modules@nestjs.com>',
         },
+        template: {
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
       }),
       inject: [ConfigService],
     }),
@@ -46,6 +54,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
     RmqModule.register({ name: GAME_RABBITMQ_QUEUE }),
   ],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [AccountService, GoogleService],
 })
 export class AccountModule {}
