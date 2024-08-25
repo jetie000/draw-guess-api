@@ -1,5 +1,11 @@
 import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { PrismaService } from '@app/common/prisma/prisma.service';
@@ -8,6 +14,10 @@ import { ConfigService } from '@nestjs/config';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { compare, hash } from 'bcrypt';
+import { randomCode } from '@app/common/helpers/random';
+import { MailerService } from '@nestjs-modules/mailer';
+import { CODE_LENGTH } from '@app/common/helpers/constants';
 
 @Injectable()
 export class AccountService {
@@ -15,6 +25,7 @@ export class AccountService {
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailerService: MailerService,
     @Inject(DRAWING_RABBITMQ_QUEUE) private drawingClient: ClientProxy
   ) {}
 
@@ -42,16 +53,94 @@ export class AccountService {
       },
     });
 
-    if (user?.password !== signInDto.password) {
-      throw new UnauthorizedException();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
-    return await this.generateTokens({
-      sub: user.id,
+    if (!user.access) {
+      throw new UnauthorizedException('User is blocked');
+    }
+
+    const isEqualPasswords = compare(signInDto.password, user.password);
+    if (!isEqualPasswords) {
+      throw new UnauthorizedException('Wrong password');
+    }
+
+    const tokens = await this.generateTokens({
       username: user.username,
       email: user.email,
     });
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        loginDate: new Date(),
+        refreshToken: tokens.refreshToken,
+      },
+    });
+
+    return tokens;
   }
 
-  async signUp(signUpDto: SignUpDto) {}
+  async signUp(signUpDto: SignUpDto) {
+    const userToFind = await this.prismaService.user.findFirst({
+      where: {
+        email: signUpDto.email,
+      },
+    });
+
+    if (userToFind) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    const hashPassword = await hash(signUpDto.password, 10);
+    const tokens = await this.generateTokens({
+      username: signUpDto.username,
+      email: signUpDto.email,
+    });
+
+    await this.prismaService.user.create({
+      data: {
+        email: signUpDto.email,
+        username: signUpDto.username,
+        password: hashPassword,
+        joinDate: new Date(),
+        loginDate: new Date(),
+        refreshToken: tokens.refreshToken,
+        access: true,
+        avatarUrl: null,
+        role: 0,
+      },
+    });
+  }
+
+  async requestCode(email: string) {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        email: email,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const code = randomCode(CODE_LENGTH);
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        resetCode: code,
+      },
+    });
+
+    await this.mailerService.sendMail({
+      to: email,
+      from: this.configService.get('SMTP_USER'),
+      subject: 'Reset password request',
+      html: `Your code is <b>${code}</b>`,
+    });
+  }
 }

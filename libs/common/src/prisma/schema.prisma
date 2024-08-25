@@ -20,10 +20,11 @@ model User {
   username     String
   role         Int
   access       Boolean
-  avatarUrl    String
+  avatarUrl    String?
   refreshToken String
   joinDate     DateTime
   loginDate    DateTime
+  resetCode    String?
   gamePlayers  GamePlayer[]
   createdGames Game[]
 }
@@ -74,12 +75,12 @@ model Drawing {
 }
 
 model GamePlayer {
-  id     Int  @id @default(autoincrement())
-  user   User @relation(fields: [userId], references: [id])
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [userId], references: [id])
   userId          Int
-  game   Game @relation(fields: [gameId], references: [id])
+  game            Game             @relation(fields: [gameId], references: [id])
   gameId          Int
-  points Int
+  points          Int
   drawingMessages DrawingMessage[]
   drawings        Drawing[]
 }
