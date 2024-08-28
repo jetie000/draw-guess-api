@@ -69,7 +69,7 @@ export class AccountController {
     return { accessToken: tokens.accessToken };
   }
 
-  @Post('signup')
+  @Post('sign-up')
   @HttpCode(201)
   async signUp(@Body() signUpDto: SignUpDto) {
     return await this.accountService.signUp(signUpDto);

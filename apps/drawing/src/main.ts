@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(DrawingModule);
   app.useGlobalPipes(new ValidationPipe());
+  app.setGlobalPrefix('api');
   const rmqService = app.get<RmqService>(RmqService);
   app.connectMicroservice(rmqService.getOptions(DRAWING_RABBITMQ_QUEUE));
   await app.startAllMicroservices();

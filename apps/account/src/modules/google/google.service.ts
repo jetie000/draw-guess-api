@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
-import { GoogleInfo } from './typings/interfaces/google-info.interface';
+import { GoogleInfo } from './interfaces/google-info.interface';
 
 @Injectable()
 export class GoogleService {

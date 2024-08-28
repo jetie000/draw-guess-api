@@ -9,6 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
   const port = app.get(ConfigService).get('PORT_ACCOUNT');
+  app.setGlobalPrefix('api');
   await app.listen(port);
 }
 bootstrap();

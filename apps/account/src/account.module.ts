@@ -11,7 +11,7 @@ import {
 import { JwtModule } from '@nestjs/jwt';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { GoogleService } from './google.service';
+import { GoogleModule } from './modules/google/google.module';
 
 @Module({
   imports: [
@@ -52,8 +52,9 @@ import { GoogleService } from './google.service';
     PrismaModule,
     RmqModule.register({ name: DRAWING_RABBITMQ_QUEUE }),
     RmqModule.register({ name: GAME_RABBITMQ_QUEUE }),
+    GoogleModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService, GoogleService],
+  providers: [AccountService],
 })
 export class AccountModule {}

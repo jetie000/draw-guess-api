@@ -1,11 +1,14 @@
-import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
+import path from 'path';
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { PrismaService } from '@app/common/prisma/prisma.service';
@@ -17,9 +20,8 @@ import { compare, hash } from 'bcrypt';
 import { randomCode } from '@app/common/helpers/random';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CODE_LENGTH } from '@app/common/helpers/constants';
-import path from 'path';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { GoogleService } from './google.service';
+import { GoogleService } from './modules/google/google.service';
 import { JwtPayload } from './typings/interfaces/jwt-payload.interface';
 import { AccountType } from './typings/enums';
 
@@ -60,11 +62,11 @@ export class AccountService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     if (!user.access) {
-      throw new UnauthorizedException('User is blocked');
+      throw new ForbiddenException('User is blocked');
     }
 
     const isEqualPasswords = await compare(signInDto.password, user.password);
@@ -128,10 +130,10 @@ export class AccountService {
       return tokens;
     } else {
       if (userTofind.type !== AccountType.GOOGLE) {
-        throw new UnauthorizedException('User is registered without google');
+        throw new ConflictException('User is registered without google');
       }
       if (userTofind.access === false) {
-        throw new UnauthorizedException('User is blocked');
+        throw new ForbiddenException('User is blocked');
       }
       if (userTofind.password !== hashedPassword) {
         throw new UnauthorizedException('Wrong credentials');
@@ -158,7 +160,7 @@ export class AccountService {
     });
 
     if (userToFind) {
-      throw new BadRequestException('User with this email already exists');
+      throw new ConflictException('User with this email already exists');
     }
 
     const hashPassword = await hash(
