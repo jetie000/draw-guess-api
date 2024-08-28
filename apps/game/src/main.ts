@@ -12,7 +12,9 @@ async function bootstrap() {
   const rmqService = app.get<RmqService>(RmqService);
   app.connectMicroservice(rmqService.getOptions(GAME_RABBITMQ_QUEUE));
   await app.startAllMicroservices();
-  const port = app.get(ConfigService).get('PORT_GAME');
+  const configService = app.get(ConfigService);
+  app.enableCors({ origin: configService.get('FRONTEND_URL') });
+  const port = configService.get('PORT_GAME');
   await app.listen(port);
 }
 bootstrap();
