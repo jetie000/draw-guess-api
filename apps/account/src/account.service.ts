@@ -17,13 +17,13 @@ import { ConfigService } from '@nestjs/config';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { compare, hash } from 'bcrypt';
-import { randomCode } from '@app/common/helpers/random';
+import { randomNumCode } from '@app/common/helpers/random';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CODE_LENGTH } from '@app/common/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleService } from './modules/google/google.service';
-import { JwtPayload } from './typings/interfaces/jwt-payload.interface';
-import { AccountType } from './typings/enums';
+import { JwtPayload } from '@app/common/typings/interfaces/jwt-payload.interface';
+import { AccountType } from '@app/common/typings/enums/account';
 
 @Injectable()
 export class AccountService {
@@ -198,7 +198,7 @@ export class AccountService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const code = randomCode(CODE_LENGTH);
+    const code = randomNumCode(CODE_LENGTH);
 
     await this.prismaService.user.update({
       where: {

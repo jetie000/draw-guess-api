@@ -9,11 +9,14 @@ async function bootstrap() {
   const app = await NestFactory.create(GameModule);
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('api');
+  const configService = app.get(ConfigService);
+
   const rmqService = app.get<RmqService>(RmqService);
   app.connectMicroservice(rmqService.getOptions(GAME_RABBITMQ_QUEUE));
   await app.startAllMicroservices();
-  const configService = app.get(ConfigService);
+
   app.enableCors({ origin: configService.get('FRONTEND_URL') });
+
   const port = configService.get('PORT_GAME');
   await app.listen(port);
 }

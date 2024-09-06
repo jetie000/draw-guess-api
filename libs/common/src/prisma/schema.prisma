@@ -31,27 +31,27 @@ model User {
 }
 
 model Game {
-  id        Int          @id @default(autoincrement())
-  code      String
-  creator   User         @relation(fields: [creatorId], references: [id])
-  creatorId Int
-  drawings  Drawing[]
-  players   GamePlayer[]
-  isEnded   Boolean
-  startDate DateTime
-  endDate   DateTime
+  id                Int          @id @default(autoincrement())
+  code              String
+  creator           User         @relation(fields: [creatorId], references: [id])
+  creatorId         Int
+  drawings          Drawing[]
+  players           GamePlayer[]
+  maxPlayers        Int
+  roundDuration     Int
+  drawingsPerPlayer Int
+  startDate         DateTime
+  endDate           DateTime?
 }
 
 model DrawingPart {
-  id          Int     @id @default(autoincrement())
-  type        String
-  lineWidth   Int
-  strokeColor String
-  fillColor   String
-  posX        Int[]
-  posY        Int[]
-  drawing     Drawing @relation(fields: [drawingId], references: [id])
-  drawingId   Int
+  id        Int     @id @default(autoincrement())
+  lineWidth Int
+  color     String
+  posX      Int[]
+  posY      Int[]
+  drawing   Drawing @relation(fields: [drawingId], references: [id])
+  drawingId Int
 }
 
 model DrawingMessage {
@@ -81,7 +81,7 @@ model GamePlayer {
   userId          Int
   game            Game             @relation(fields: [gameId], references: [id])
   gameId          Int
-  points          Int
+  points          Int              @default(0)
   drawingMessages DrawingMessage[]
   drawings        Drawing[]
 }
