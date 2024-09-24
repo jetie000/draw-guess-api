@@ -247,4 +247,38 @@ export class AccountService {
       },
     });
   }
+
+  async refreshToken(refreshToken: string) {
+    const payload: JwtPayload = await this.jwtService.verifyAsync(
+      refreshToken,
+      {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+      }
+    );
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        refreshToken,
+      },
+    });
+    if (!user || !payload.email) {
+      throw new NotFoundException('User not found');
+    }
+
+    const tokens = await this.generateTokens({
+      username: user.username,
+      email: user.email,
+      type: user.type,
+    });
+
+    await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        refreshToken: tokens.refreshToken,
+      },
+    });
+
+    return tokens;
+  }
 }
