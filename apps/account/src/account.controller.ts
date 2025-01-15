@@ -25,11 +25,6 @@ export class AccountController {
     private readonly configService: ConfigService
   ) {}
 
-  @Get()
-  async getHello() {
-    return await this.accountService.getHello();
-  }
-
   @Post('login')
   @HttpCode(200)
   async signIn(

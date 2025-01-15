@@ -1,17 +1,17 @@
-import { IsNumber, Max, Min } from 'class-validator';
+import { IsInt, Max, Min } from 'class-validator';
 
 export class CreateGameDto {
-  @IsNumber()
+  @IsInt()
   @Max(12)
   @Min(2)
   maxPlayers: number;
 
-  @IsNumber()
+  @IsInt()
   @Max(90)
   @Min(10)
   roundDuration: number;
 
-  @IsNumber()
+  @IsInt()
   @Max(4)
   @Min(1)
   drawingsPerPlayer: number;

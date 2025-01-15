@@ -48,7 +48,7 @@ export class GameService {
       },
     });
 
-    return game;
+    return game.id;
   }
 
   async joinGame(code: string, user: User) {
@@ -59,21 +59,9 @@ export class GameService {
 
     const gameFound = await this.prismaService.game.findFirst({
       where: { code, players: { some: { userId: user.id } } },
-      include: {
-        players: {
-          include: {
-            user: {
-              select: {
-                avatarUrl: true,
-                username: true,
-              },
-            },
-          },
-        },
-      },
     });
     if (gameFound) {
-      return gameFound;
+      return gameFound.id;
     }
 
     const gameUpdated = await this.prismaService.game.update({
@@ -83,11 +71,20 @@ export class GameService {
           create: { userId: user.id },
         },
       },
+    });
+
+    return gameUpdated.id;
+  }
+
+  getGame(id: number, user: User) {
+    const game = this.prismaService.game.findUnique({
+      where: { id, players: { some: { userId: user.id } } },
       include: {
         players: {
           include: {
             user: {
               select: {
+                id: true,
                 avatarUrl: true,
                 username: true,
               },
@@ -96,7 +93,9 @@ export class GameService {
         },
       },
     });
-
-    return gameUpdated;
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+    return game;
   }
 }

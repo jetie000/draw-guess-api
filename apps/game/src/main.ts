@@ -15,7 +15,10 @@ async function bootstrap() {
   app.connectMicroservice(rmqService.getOptions(GAME_RABBITMQ_QUEUE));
   await app.startAllMicroservices();
 
-  app.enableCors({ origin: configService.get('FRONTEND_URL') });
+  app.enableCors({
+    origin: configService.get('FRONTEND_URL'),
+    credentials: true,
+  });
 
   const port = configService.get('PORT_GAME');
   await app.listen(port);

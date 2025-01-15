@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
 import { ClientProxy } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
 import { PrismaService } from '@app/common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -35,13 +34,6 @@ export class AccountService {
     private readonly googleService: GoogleService,
     @Inject(DRAWING_RABBITMQ_QUEUE) private drawingClient: ClientProxy
   ) {}
-
-  async getHello() {
-    await lastValueFrom(
-      this.drawingClient.emit('hello', 'message from account!!!')
-    );
-    return 'Hello World!';
-  }
 
   async generateTokens(payload: JwtPayload) {
     return {
@@ -248,7 +240,10 @@ export class AccountService {
     });
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string | undefined) {
+    if (!refreshToken) {
+      throw new ForbiddenException();
+    }
     const payload: JwtPayload = await this.jwtService.verifyAsync(
       refreshToken,
       {

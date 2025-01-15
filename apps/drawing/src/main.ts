@@ -9,11 +9,17 @@ async function bootstrap() {
   const app = await NestFactory.create(DrawingModule);
   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix('api');
+  const configService = app.get(ConfigService);
+
   const rmqService = app.get<RmqService>(RmqService);
   app.connectMicroservice(rmqService.getOptions(DRAWING_RABBITMQ_QUEUE));
   await app.startAllMicroservices();
-  const configService = app.get(ConfigService);
-  app.enableCors({ origin: configService.get('FRONTEND_URL') });
+
+  app.enableCors({
+    origin: configService.get('FRONTEND_URL'),
+    credentials: true,
+  });
+
   const port = configService.get('PORT_DRAWING');
   await app.listen(port);
 }
