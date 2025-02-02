@@ -8,6 +8,7 @@ import {
   Put,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AccountService } from './account.service';
@@ -17,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import { MILLISECONDS_IN_A_DAY } from '@app/common/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignInGoogleDto } from './dto/sign-in-google.dto';
+import { AuthGuard } from '@app/common/auth/auth.guard';
 
 @Controller('user')
 export class AccountController {
@@ -99,5 +101,18 @@ export class AccountController {
       sameSite: 'none',
     });
     return { accessToken: tokens.accessToken };
+  }
+
+  @Get('profile')
+  @UseGuards(AuthGuard)
+  getProfile(@Req() request: Request) {
+    return {
+      id: request.user.id,
+      email: request.user.email,
+      username: request.user.username,
+      joinDate: request.user.joinDate,
+      loginDate: request.user.loginDate,
+      avatarUrl: request.user.avatarUrl,
+    };
   }
 }

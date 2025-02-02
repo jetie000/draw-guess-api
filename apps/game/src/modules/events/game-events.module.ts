@@ -4,4 +4,4 @@ import { GameGateway } from './game.gateway';
 @Module({
   providers: [GameGateway],
 })
-export class EventsModule {}
+export class GameEventsModule {}

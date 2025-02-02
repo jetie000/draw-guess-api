@@ -38,7 +38,6 @@ export class GameService {
       data: {
         ...createGameDto,
         code,
-        startDate: new Date(),
         creatorId: user.id,
         players: {
           create: {
@@ -52,16 +51,21 @@ export class GameService {
   }
 
   async joinGame(code: string, user: User) {
-    const game = await this.prismaService.game.findFirst({ where: { code } });
+    const game = await this.prismaService.game.findFirst({
+      where: { code: code.toLowerCase() },
+      include: { players: true },
+    });
+
     if (!game) {
       throw new NotFoundException('Game not found');
     }
 
-    const gameFound = await this.prismaService.game.findFirst({
-      where: { code, players: { some: { userId: user.id } } },
-    });
-    if (gameFound) {
-      return gameFound.id;
+    if (game.players.some((player) => player.userId === user.id)) {
+      return game.id;
+    }
+
+    if (game.players.length === game.maxPlayers) {
+      throw new BadRequestException('Game is full');
     }
 
     const gameUpdated = await this.prismaService.game.update({

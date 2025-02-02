@@ -40,7 +40,7 @@ model Game {
   maxPlayers        Int
   roundDuration     Int
   drawingsPerPlayer Int
-  startDate         DateTime
+  startDate         DateTime?
   endDate           DateTime?
 }
 

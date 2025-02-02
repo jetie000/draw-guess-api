@@ -7,6 +7,7 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '@app/common/auth/auth.guard';
 import { AuthModule } from '@app/common/auth/auth.module';
+import { GameEventsModule } from './modules/events/game-events.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthModule } from '@app/common/auth/auth.module';
     AuthModule,
     PrismaModule,
     RmqModule,
+    GameEventsModule,
   ],
   controllers: [GameController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }, GameService],

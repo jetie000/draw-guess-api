@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -10,7 +11,7 @@ import {
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { Request } from 'express';
-import { GetGameDto } from './dto/get-game.dto';
+import { isInt } from 'class-validator';
 
 @Controller('game')
 export class GameController {
@@ -28,7 +29,11 @@ export class GameController {
   }
 
   @Get('/:id')
-  getGame(@Param() params: GetGameDto, @Req() req: Request) {
-    return this.gameService.getGame(params.id, req.user);
+  getGame(@Param('id') id: string, @Req() req: Request) {
+    const numberId = parseInt(id);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.gameService.getGame(numberId, req.user);
   }
 }
