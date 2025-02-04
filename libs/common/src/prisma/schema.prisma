@@ -71,7 +71,7 @@ model Drawing {
   endDate      DateTime
   gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
   gamePlayerId Int
-  game         Game             @relation(fields: [gameId], references: [id])
+  game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId       Int
 }
 
@@ -79,7 +79,7 @@ model GamePlayer {
   id              Int              @id @default(autoincrement())
   user            User             @relation(fields: [userId], references: [id])
   userId          Int
-  game            Game             @relation(fields: [gameId], references: [id])
+  game            Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId          Int
   points          Int              @default(0)
   drawingMessages DrawingMessage[]

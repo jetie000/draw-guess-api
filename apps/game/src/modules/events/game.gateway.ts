@@ -21,7 +21,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private logger = new Logger('ChatGateway');
+  private logger = new Logger('GameGateway');
 
   handleConnection(socket: Socket) {
     this.logger.log(`Socket connected: ${socket.id}`);
@@ -51,6 +51,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.logger.log(`Client with id: ${userId} left room: ${room}`);
     client.to(String(room)).emit('leftGame', userId);
+    client.leave(String(room));
+  }
+
+  @SubscribeMessage('deleteGame')
+  async handleDeleteGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('room') room: number
+  ) {
+    this.logger.log(`Room deleted: ${room}`);
+    client.to(String(room)).emit('deletedGame');
     client.leave(String(room));
   }
 }

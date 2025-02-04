@@ -51,6 +51,16 @@ export class GameService {
   }
 
   async joinGame(code: string, user: User) {
+    const gameParticipating = await this.prismaService.game.findFirst({
+      where: { players: { some: { userId: user.id } } },
+    });
+
+    if (gameParticipating) {
+      if (gameParticipating.code === code.toLowerCase()) {
+        return gameParticipating.id;
+      }
+      throw new BadRequestException('You are already in another game');
+    }
     const game = await this.prismaService.game.findFirst({
       where: { code: code.toLowerCase() },
       include: { players: true },
@@ -80,8 +90,8 @@ export class GameService {
     return gameUpdated.id;
   }
 
-  getGame(id: number, user: User) {
-    const game = this.prismaService.game.findUnique({
+  async getGame(id: number, user: User) {
+    const game = await this.prismaService.game.findUnique({
       where: { id, players: { some: { userId: user.id } } },
       include: {
         players: {
@@ -101,5 +111,56 @@ export class GameService {
       throw new NotFoundException('Game not found');
     }
     return game;
+  }
+
+  async getParticipatingGames(user: User, isEnded: boolean) {
+    return await this.prismaService.game.findMany({
+      where: {
+        players: { some: { userId: user.id } },
+        endDate: isEnded ? { not: null } : null,
+      },
+      include: {
+        players: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                avatarUrl: true,
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async deleteLeaveGame(id: number, user: User) {
+    const game = await this.prismaService.game.findUnique({
+      where: { id },
+      include: { players: true },
+    });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+    if (game.startDate) {
+      throw new BadRequestException('Game has started');
+    }
+    if (game.creatorId !== user.id) {
+      if (!game.players.some((player) => player.userId === user.id)) {
+        throw new BadRequestException('You are not in this game');
+      }
+      return this.prismaService.game.update({
+        where: { id },
+        data: {
+          players: {
+            deleteMany: { userId: user.id },
+          },
+        },
+      });
+    }
+    return this.prismaService.game.delete({
+      where: { id },
+    });
   }
 }

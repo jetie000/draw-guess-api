@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import { GameService } from './game.service';
@@ -28,6 +30,14 @@ export class GameController {
     return this.gameService.joinGame(code, req.user);
   }
 
+  @Get('/participating')
+  getParticipatingGames(
+    @Req() req: Request,
+    @Query('isEnded') isEnded: string = 'false'
+  ) {
+    return this.gameService.getParticipatingGames(req.user, isEnded === 'true');
+  }
+
   @Get('/:id')
   getGame(@Param('id') id: string, @Req() req: Request) {
     const numberId = parseInt(id);
@@ -35,5 +45,14 @@ export class GameController {
       throw new BadRequestException('Invalid id');
     }
     return this.gameService.getGame(numberId, req.user);
+  }
+
+  @Delete('/:id')
+  deleteLeaveGame(@Param('id') id: string, @Req() req: Request) {
+    const numberId = parseInt(id);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.gameService.deleteLeaveGame(numberId, req.user);
   }
 }
