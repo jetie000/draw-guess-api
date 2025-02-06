@@ -135,6 +135,29 @@ export class GameService {
     });
   }
 
+  async getPublicGames(user: User) {
+    return await this.prismaService.game.findMany({
+      where: {
+        players: { none: { userId: user.id } },
+        startDate: null,
+        isPrivate: false,
+      },
+      include: {
+        players: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                avatarUrl: true,
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async deleteLeaveGame(id: number, user: User) {
     const game = await this.prismaService.game.findUnique({
       where: { id },

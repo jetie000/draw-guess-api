@@ -37,6 +37,7 @@ model Game {
   creatorId         Int
   drawings          Drawing[]
   players           GamePlayer[]
+  isPrivate         Boolean
   maxPlayers        Int
   roundDuration     Int
   drawingsPerPlayer Int

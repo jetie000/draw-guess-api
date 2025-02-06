@@ -1,4 +1,4 @@
-import { IsInt, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, Max, Min } from 'class-validator';
 
 export class CreateGameDto {
   @IsInt()
@@ -15,4 +15,7 @@ export class CreateGameDto {
   @Max(4)
   @Min(1)
   drawingsPerPlayer: number;
+
+  @IsBoolean()
+  isPrivate: boolean;
 }

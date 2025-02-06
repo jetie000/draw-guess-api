@@ -38,6 +38,11 @@ export class GameController {
     return this.gameService.getParticipatingGames(req.user, isEnded === 'true');
   }
 
+  @Get('/public')
+  getPublicGames(@Req() req: Request) {
+    return this.gameService.getPublicGames(req.user);
+  }
+
   @Get('/:id')
   getGame(@Param('id') id: string, @Req() req: Request) {
     const numberId = parseInt(id);
