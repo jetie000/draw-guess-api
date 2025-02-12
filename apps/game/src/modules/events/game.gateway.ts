@@ -11,6 +11,9 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Player } from './interfaces/player-join.interface';
+import { CreateGame } from './interfaces/create-game.interface';
+
+const publicRoom = 'public-room';
 
 @WebSocketGateway({
   cors: {
@@ -28,6 +31,41 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
   handleDisconnect(socket: Socket) {
     this.logger.log(`Socket disconnected: ${socket.id}`);
+  }
+
+  @SubscribeMessage('joinPublic')
+  async handleJoinPublic(@ConnectedSocket() client: Socket) {
+    client.join(publicRoom);
+  }
+
+  @SubscribeMessage('leavePublic')
+  async handleLeavePublic(@ConnectedSocket() client: Socket) {
+    client.leave(publicRoom);
+  }
+
+  @SubscribeMessage('joinGamePublic')
+  async handleCreateGamePublic(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('game') game: CreateGame
+  ) {
+    client.to(publicRoom).emit('joinedGamePublic', game);
+  }
+
+  @SubscribeMessage('deleteGamePublic')
+  async handleCreateGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('room') room: number
+  ) {
+    client.to(publicRoom).emit('deletedGamePublic', room);
+  }
+
+  @SubscribeMessage('leaveGamePublic')
+  async handleLeaveGamePublic(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('room') room: number,
+    @MessageBody('userId') userId: number
+  ) {
+    client.to(publicRoom).emit('leftGamePublic', { room, userId });
   }
 
   @SubscribeMessage('joinGame')
