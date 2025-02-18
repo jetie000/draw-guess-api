@@ -4,14 +4,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateGameDto } from './dto/create-game.dto';
-import { PrismaService } from '@app/common/prisma/prisma.service';
-import { MaxGameDrawings } from '@app/common/helpers/game';
+import { PrismaService } from '@app/prisma/prisma.service';
+import { MaxGameDrawings } from '@app/helpers/game';
 import { User } from '@prisma/client';
-import { randomCode } from '@app/common/helpers/random';
+import { randomCode } from '@app/helpers/random';
+import { SocketService } from '@app/socket/socket.service';
 
 @Injectable()
 export class GameService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly socketService: SocketService
+  ) {}
 
   async createGame(createGameDto: CreateGameDto, user: User) {
     if (
@@ -185,5 +189,34 @@ export class GameService {
     return this.prismaService.game.delete({
       where: { id },
     });
+  }
+
+  async startGame(id: number, user: User) {
+    const game = await this.prismaService.game.findUnique({
+      where: { id },
+      include: { players: true },
+    });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+    if (game.creatorId !== user.id) {
+      throw new BadRequestException('You are not the creator of this game');
+    }
+    if (game.players.length < 2) {
+      throw new BadRequestException('Not enough players');
+    }
+    if (game.startDate) {
+      throw new BadRequestException('Game has already started');
+    }
+    const gameStarted = await this.prismaService.game.update({
+      where: { id },
+      data: { startDate: new Date() },
+    });
+
+    this.socketService.socket
+      .to(String(game.id))
+      .emit('gameStarted', gameStarted.startDate.toISOString());
+
+    return gameStarted;
   }
 }

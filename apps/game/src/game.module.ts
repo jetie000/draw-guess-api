@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@app/common';
-import { RmqModule } from '@app/common/rmq/rmq.module';
+import { PrismaModule } from '@app';
+import { RmqModule } from '@app/rmq/rmq.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard } from '@app/common/auth/auth.guard';
-import { AuthModule } from '@app/common/auth/auth.module';
+import { AuthGuard } from '@app/auth/auth.guard';
+import { AuthModule } from '@app/auth/auth.module';
 import { GameEventsModule } from './modules/events/game-events.module';
 
 @Module({

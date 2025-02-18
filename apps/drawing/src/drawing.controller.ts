@@ -1,7 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { DrawingService } from './drawing.service';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
-import { RmqService } from '@app/common';
+import { RmqService } from '@app';
 
 @Controller('drawing')
 export class DrawingController {

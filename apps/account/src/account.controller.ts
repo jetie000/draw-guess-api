@@ -15,10 +15,10 @@ import { AccountService } from './account.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ConfigService } from '@nestjs/config';
-import { MILLISECONDS_IN_A_DAY } from '@app/common/helpers/constants';
+import { MILLISECONDS_IN_A_DAY } from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignInGoogleDto } from './dto/sign-in-google.dto';
-import { AuthGuard } from '@app/common/auth/auth.guard';
+import { AuthGuard } from '@app/auth/auth.guard';
 
 @Controller('user')
 export class AccountController {

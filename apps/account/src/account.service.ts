@@ -8,21 +8,21 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
+import { DRAWING_RABBITMQ_QUEUE } from '@app/rmq/constants';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaService } from '@app/common/prisma/prisma.service';
+import { PrismaService } from '@app/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { compare, hash } from 'bcrypt';
-import { randomNumCode } from '@app/common/helpers/random';
+import { randomNumCode } from '@app/helpers/random';
 import { MailerService } from '@nestjs-modules/mailer';
-import { CODE_LENGTH } from '@app/common/helpers/constants';
+import { CODE_LENGTH } from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleService } from './modules/google/google.service';
-import { JwtPayload } from '@app/common/typings/interfaces/jwt-payload.interface';
-import { AccountType } from '@app/common/typings/enums/account';
+import { JwtPayload } from '@app/typings/interfaces/jwt-payload.interface';
+import { AccountType } from '@app/typings/enums/account';
 
 @Injectable()
 export class AccountService {

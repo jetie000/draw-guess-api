@@ -30,7 +30,7 @@ export class GameController {
     return this.gameService.joinGame(code, req.user);
   }
 
-  @Get('/participating')
+  @Get('participating')
   getParticipatingGames(
     @Req() req: Request,
     @Query('isEnded') isEnded: string = 'false'
@@ -38,12 +38,12 @@ export class GameController {
     return this.gameService.getParticipatingGames(req.user, isEnded === 'true');
   }
 
-  @Get('/public')
+  @Get('public')
   getPublicGames(@Req() req: Request) {
     return this.gameService.getPublicGames(req.user);
   }
 
-  @Get('/:id')
+  @Get(':id')
   getGame(@Param('id') id: string, @Req() req: Request) {
     const numberId = parseInt(id);
     if (isInt(numberId) === false) {
@@ -52,12 +52,21 @@ export class GameController {
     return this.gameService.getGame(numberId, req.user);
   }
 
-  @Delete('/:id')
+  @Delete(':id')
   deleteLeaveGame(@Param('id') id: string, @Req() req: Request) {
     const numberId = parseInt(id);
     if (isInt(numberId) === false) {
       throw new BadRequestException('Invalid id');
     }
     return this.gameService.deleteLeaveGame(numberId, req.user);
+  }
+
+  @Post(':id/start')
+  startGame(@Param('id') id: string, @Req() req: Request) {
+    const numberId = parseInt(id);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.gameService.startGame(numberId, req.user);
   }
 }

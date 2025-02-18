@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { DrawingModule } from './drawing.module';
 import { ValidationPipe } from '@nestjs/common';
-import { RmqService } from '@app/common';
-import { DRAWING_RABBITMQ_QUEUE } from '@app/common/rmq/constants';
+import { RmqService } from '@app';
+import { DRAWING_RABBITMQ_QUEUE } from '@app/rmq/constants';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {

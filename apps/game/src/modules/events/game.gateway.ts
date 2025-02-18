@@ -5,6 +5,7 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -12,6 +13,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Player } from './interfaces/player-join.interface';
 import { CreateGame } from './interfaces/create-game.interface';
+import { SocketService } from '@app/socket/socket.service';
 
 const publicRoom = 'public-room';
 
@@ -20,11 +22,19 @@ const publicRoom = 'public-room';
     origin: new ConfigService().get('FRONTEND_URL'),
   },
 })
-export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class GameGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
+  constructor(private readonly socketService: SocketService) {}
+
   @WebSocketServer()
   server: Server;
 
   private logger = new Logger('GameGateway');
+
+  afterInit(server: Server) {
+    this.socketService.socket = server;
+  }
 
   handleConnection(socket: Socket) {
     this.logger.log(`Socket connected: ${socket.id}`);
