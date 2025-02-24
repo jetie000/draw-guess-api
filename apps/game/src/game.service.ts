@@ -210,7 +210,7 @@ export class GameService {
     }
     const gameStarted = await this.prismaService.game.update({
       where: { id },
-      data: { startDate: new Date() },
+      data: { startDate: new Date(), currentRound: 1 },
     });
 
     this.socketService.socket

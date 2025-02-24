@@ -41,6 +41,7 @@ model Game {
   maxPlayers        Int
   roundDuration     Int
   drawingsPerPlayer Int
+  currentRound      Int          @default(0)
   startDate         DateTime?
   endDate           DateTime?
 }
@@ -69,11 +70,11 @@ model Drawing {
   id           Int              @id @default(autoincrement())
   drawingParts DrawingPart[]
   messages     DrawingMessage[]
-  endDate      DateTime
   gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
   gamePlayerId Int
   game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId       Int
+  roundNumber  Int
 }
 
 model GamePlayer {

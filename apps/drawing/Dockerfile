@@ -23,7 +23,7 @@ COPY package*.json ./
 
 RUN npm install --only=production
 
-COPY libs/common/src/prisma ./libs/common/src/prisma
+COPY libs/src/prisma ./libs/src/prisma
 
 RUN npx prisma generate
 

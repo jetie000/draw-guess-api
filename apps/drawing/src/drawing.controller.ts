@@ -1,7 +1,17 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { DrawingService } from './drawing.service';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import { Request } from 'express';
 import { RmqService } from '@app';
+import { AddDrawingDto } from './dto/add-drawing.dto';
+import { isInt } from 'class-validator';
 
 @Controller('drawing')
 export class DrawingController {
@@ -10,16 +20,24 @@ export class DrawingController {
     private readonly rmqService: RmqService
   ) {}
 
-  private readonly logger = new Logger(DrawingController.name);
-
-  @Get()
-  getHello(): string {
-    return this.drawingService.getHello();
+  @Post()
+  addDrawing(@Body() drawing: AddDrawingDto, @Req() req: Request) {
+    return this.drawingService.addDrawing(drawing, req.user);
   }
 
-  @EventPattern('hello')
-  handleHello(@Payload() data: string, @Ctx() context: RmqContext) {
-    this.logger.log(`data: ${data}`);
-    this.rmqService.ack(context);
+  @Get('game-current/:gameId')
+  getDrawing(@Req() req: Request, @Param('gameId') gameId: string) {
+    const numberId = parseInt(gameId);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.drawingService.getCurrentGameDrawing(numberId, req.user);
   }
+
+  // TODO: implement rmq
+  // @EventPattern('hello')
+  // handleHello(@Payload() data: string, @Ctx() context: RmqContext) {
+  //   this.logger.log(`data: ${data}`);
+  //   this.rmqService.ack(context);
+  // }
 }
