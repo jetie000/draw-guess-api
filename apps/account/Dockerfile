@@ -8,6 +8,8 @@ RUN npm install
 
 COPY . .
 
+RUN npx prisma generate
+
 RUN npm run build account
 
 FROM node:23 AS production
