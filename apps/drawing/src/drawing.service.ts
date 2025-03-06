@@ -32,6 +32,7 @@ export class DrawingService {
             },
           },
         },
+        wordTypes: true,
       },
     });
     if (!game) {
@@ -78,6 +79,20 @@ export class DrawingService {
         },
       });
     }
+    const gameWordTypes = await this.prismaService.drawingWordType.findMany({
+      where: {
+        id: { in: game.wordTypes.map((type) => type.id) },
+      },
+    });
+    const gameWords = await this.prismaService.drawingWord.findMany({
+      where: {
+        typeId: { in: gameWordTypes.map((type) => type.id) },
+      },
+      select: {
+        id: true,
+      },
+    });
+    const word = gameWords[Math.floor(Math.random() * gameWords.length)];
     return await this.prismaService.drawing.create({
       data: {
         roundNumber: drawing.roundNumber,
@@ -89,6 +104,7 @@ export class DrawingService {
             lineWidth: drawing.lineWidth,
           },
         },
+        wordId: word.id,
         gameId: drawing.gameId,
         gamePlayerId: drawing.gamePlayerId,
       },

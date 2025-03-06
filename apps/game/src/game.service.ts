@@ -40,7 +40,13 @@ export class GameService {
 
     const game = await this.prismaService.game.create({
       data: {
-        ...createGameDto,
+        drawingsPerPlayer: createGameDto.drawingsPerPlayer,
+        maxPlayers: createGameDto.maxPlayers,
+        isPrivate: createGameDto.isPrivate,
+        roundDuration: createGameDto.roundDuration,
+        wordTypes: {
+          connect: createGameDto.wordTypeIds.map((id) => ({ id })),
+        },
         code,
         creatorId: user.id,
         players: {

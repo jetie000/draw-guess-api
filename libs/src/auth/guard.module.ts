@@ -3,6 +3,7 @@ import { AuthGuard } from './auth.guard';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RolesGuard } from './roles.guard';
 
 @Global()
 @Module({
@@ -17,7 +18,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     }),
     PrismaModule,
   ],
-  providers: [AuthGuard, JwtService],
-  exports: [AuthGuard, JwtService],
+  providers: [AuthGuard, RolesGuard, JwtService],
+  exports: [AuthGuard, RolesGuard, JwtService],
 })
-export class AuthModule {}
+export class GuardModule {}

@@ -67,6 +67,12 @@ export class AccountController {
     return { accessToken: tokens.accessToken };
   }
 
+  @Post('logout')
+  @HttpCode(204)
+  async logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('refreshToken');
+  }
+
   @Post('sign-up')
   @HttpCode(201)
   async signUp(@Body() signUpDto: SignUpDto) {
@@ -113,6 +119,7 @@ export class AccountController {
       joinDate: request.user.joinDate,
       loginDate: request.user.loginDate,
       avatarUrl: request.user.avatarUrl,
+      role: request.user.role,
     };
   }
 }

@@ -10,6 +10,8 @@ import { Request } from 'express';
 import { JwtPayload } from '../typings/interfaces/jwt-payload.interface';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { IS_PUBLIC_KEY } from './public.decorator';
+import { Reflector } from '@nestjs/core';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -25,10 +27,19 @@ export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private reflector: Reflector
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {

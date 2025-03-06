@@ -6,7 +6,7 @@ import { PrismaModule } from '@app';
 import { RmqModule } from '@app/rmq/rmq.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '@app/auth/auth.guard';
-import { AuthModule } from '@app/auth/auth.module';
+import { GuardModule } from '@app/auth/guard.module';
 import { GameEventsModule } from './modules/events/game-events.module';
 
 @Module({
@@ -15,7 +15,7 @@ import { GameEventsModule } from './modules/events/game-events.module';
       isGlobal: true,
       envFilePath: './.env.development',
     }),
-    AuthModule,
+    GuardModule,
     PrismaModule,
     RmqModule,
     GameEventsModule,

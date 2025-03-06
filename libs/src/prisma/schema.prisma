@@ -31,9 +31,9 @@ model User {
 }
 
 model Game {
-  id                Int          @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   code              String
-  creator           User         @relation(fields: [creatorId], references: [id])
+  creator           User              @relation(fields: [creatorId], references: [id])
   creatorId         Int
   drawings          Drawing[]
   players           GamePlayer[]
@@ -41,9 +41,34 @@ model Game {
   maxPlayers        Int
   roundDuration     Int
   drawingsPerPlayer Int
-  currentRound      Int          @default(0)
+  currentRound      Int               @default(0)
   startDate         DateTime?
   endDate           DateTime?
+  wordTypes         DrawingWordType[]
+}
+
+model GamePlayer {
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [userId], references: [id])
+  userId          Int
+  game            Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId          Int
+  points          Int              @default(0)
+  drawingMessages DrawingMessage[]
+  drawings        Drawing[]
+}
+
+model Drawing {
+  id           Int              @id @default(autoincrement())
+  drawingParts DrawingPart[]
+  messages     DrawingMessage[]
+  gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
+  gamePlayerId Int
+  game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId       Int
+  roundNumber  Int
+  word         DrawingWord      @relation(fields: [wordId], references: [id])
+  wordId       Int
 }
 
 model DrawingPart {
@@ -66,24 +91,17 @@ model DrawingMessage {
   gamePlayerId Int
 }
 
-model Drawing {
-  id           Int              @id @default(autoincrement())
-  drawingParts DrawingPart[]
-  messages     DrawingMessage[]
-  gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
-  gamePlayerId Int
-  game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId       Int
-  roundNumber  Int
+model DrawingWord {
+  id       Int             @id @default(autoincrement())
+  word     String
+  type     DrawingWordType @relation(fields: [typeId], references: [id])
+  typeId   Int
+  drawings Drawing[]
 }
 
-model GamePlayer {
-  id              Int              @id @default(autoincrement())
-  user            User             @relation(fields: [userId], references: [id])
-  userId          Int
-  game            Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId          Int
-  points          Int              @default(0)
-  drawingMessages DrawingMessage[]
-  drawings        Drawing[]
+model DrawingWordType {
+  id           Int           @id @default(autoincrement())
+  type         String
+  drawingWords DrawingWord[]
+  games        Game[]
 }

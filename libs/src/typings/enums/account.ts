@@ -2,3 +2,10 @@ export enum AccountType {
   EMAIL = 0,
   GOOGLE = 1,
 }
+
+export enum UserRole {
+  USER = 0,
+  ADMIN = 1,
+}
+
+export const ROLES_KEY = 'roles-guard-key';

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, Max, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, Max, Min } from 'class-validator';
 
 export class CreateGameDto {
   @IsInt()
@@ -18,4 +18,7 @@ export class CreateGameDto {
 
   @IsBoolean()
   isPrivate: boolean;
+
+  @IsArray()
+  wordTypeIds: number[];
 }
