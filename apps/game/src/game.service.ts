@@ -115,6 +115,7 @@ export class GameService {
             },
           },
         },
+        wordTypes: true,
       },
     });
     if (!game) {
@@ -141,6 +142,7 @@ export class GameService {
             },
           },
         },
+        wordTypes: true,
       },
     });
   }
@@ -164,6 +166,7 @@ export class GameService {
             },
           },
         },
+        wordTypes: true,
       },
     });
   }

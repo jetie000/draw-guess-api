@@ -94,7 +94,7 @@ model DrawingMessage {
 model DrawingWord {
   id       Int             @id @default(autoincrement())
   word     String
-  type     DrawingWordType @relation(fields: [typeId], references: [id])
+  type     DrawingWordType @relation(fields: [typeId], references: [id], onDelete: Cascade)
   typeId   Int
   drawings Drawing[]
 }
