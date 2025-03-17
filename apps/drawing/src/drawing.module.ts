@@ -24,5 +24,6 @@ import { DrawingWordTypeModule } from './modules/drawing-word-type/drawing-word-
   ],
   controllers: [DrawingController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }, DrawingService],
+  exports: [DrawingService],
 })
 export class DrawingModule {}

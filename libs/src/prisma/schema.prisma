@@ -62,7 +62,7 @@ model Drawing {
   id           Int              @id @default(autoincrement())
   drawingParts DrawingPart[]
   messages     DrawingMessage[]
-  gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id])
+  gamePlayer   GamePlayer       @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
   gamePlayerId Int
   game         Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId       Int
@@ -77,7 +77,7 @@ model DrawingPart {
   color     String
   posX      Int[]
   posY      Int[]
-  drawing   Drawing @relation(fields: [drawingId], references: [id])
+  drawing   Drawing @relation(fields: [drawingId], references: [id], onDelete: Cascade)
   drawingId Int
 }
 

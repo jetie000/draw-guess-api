@@ -10,7 +10,7 @@ import {
 import { DrawingService } from './drawing.service';
 import { Request } from 'express';
 import { RmqService } from '@app';
-import { AddDrawingDto } from './dto/add-drawing.dto';
+import { AddDrawingPartDto } from './dto/add-drawing-part.dto';
 import { isInt } from 'class-validator';
 
 @Controller('drawing')
@@ -21,8 +21,8 @@ export class DrawingController {
   ) {}
 
   @Post()
-  addDrawing(@Body() drawing: AddDrawingDto, @Req() req: Request) {
-    return this.drawingService.addDrawing(drawing, req.user);
+  addDrawingPart(@Body() drawing: AddDrawingPartDto, @Req() req: Request) {
+    return this.drawingService.addDrawingPart(drawing, req.user);
   }
 
   @Get('game-current/:gameId')

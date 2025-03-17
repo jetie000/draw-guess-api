@@ -9,12 +9,14 @@ import { MaxGameDrawings } from '@app/helpers/game';
 import { User } from '@prisma/client';
 import { randomCode } from '@app/helpers/random';
 import { SocketService } from '@app/socket/socket.service';
+import { DrawingService } from 'apps/drawing/src/drawing.service';
 
 @Injectable()
 export class GameService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly socketService: SocketService
+    private readonly socketService: SocketService,
+    private readonly drawingService: DrawingService
   ) {}
 
   async createGame(createGameDto: CreateGameDto, user: User) {
@@ -219,8 +221,10 @@ export class GameService {
     }
     const gameStarted = await this.prismaService.game.update({
       where: { id },
-      data: { startDate: new Date(), currentRound: 1 },
+      data: { startDate: new Date(), currentRound: 0 },
     });
+
+    await this.drawingService.addDrawing(game.id);
 
     this.socketService.socket
       .to(String(game.id))

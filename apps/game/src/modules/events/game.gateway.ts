@@ -14,6 +14,7 @@ import { Server, Socket } from 'socket.io';
 import { Player } from './interfaces/player-join.interface';
 import { CreateGame } from './interfaces/create-game.interface';
 import { SocketService } from '@app/socket/socket.service';
+import { AddDrawingPart } from './interfaces/add-drawing-part.interface';
 
 const publicRoom = 'public-room';
 
@@ -110,5 +111,15 @@ export class GameGateway
     this.logger.log(`Room deleted: ${room}`);
     client.to(String(room)).emit('deletedGame');
     client.leave(String(room));
+  }
+
+  @SubscribeMessage('drewPart')
+  async handleDrewPart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() drawingData: AddDrawingPart
+  ) {
+    console.log(drawingData);
+
+    client.to(String(drawingData.room)).emit('drewPart', drawingData.drawing);
   }
 }

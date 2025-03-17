@@ -1,7 +1,6 @@
-import { Optional } from '@nestjs/common';
 import { IsArray, IsHexColor, IsNumber } from 'class-validator';
 
-export class AddDrawingDto {
+export class AddDrawingPartDto {
   @IsArray()
   posX: number[];
 
@@ -15,15 +14,8 @@ export class AddDrawingDto {
   lineWidth: number;
 
   @IsNumber()
-  roundNumber: number;
-
-  @IsNumber()
-  gamePlayerId: number;
-
-  @IsNumber()
   gameId: number;
 
   @IsNumber()
-  @Optional()
-  drawingId?: number;
+  drawingId: number;
 }

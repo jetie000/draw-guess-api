@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '@app/auth/auth.guard';
 import { GuardModule } from '@app/auth/guard.module';
 import { GameEventsModule } from './modules/events/game-events.module';
+import { DrawingService } from 'apps/drawing/src/drawing.service';
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { GameEventsModule } from './modules/events/game-events.module';
     GameEventsModule,
   ],
   controllers: [GameController],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }, GameService],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    GameService,
+    DrawingService,
+  ],
 })
 export class GameModule {}
