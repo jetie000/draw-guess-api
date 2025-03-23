@@ -6,18 +6,19 @@ import {
 import { AddDrawingPartDto } from './dto/add-drawing-part.dto';
 import { Drawing, User } from '@prisma/client';
 import { PrismaService } from '@app/prisma/prisma.service';
+import { uniqueRandomFromArray } from '@app/helpers/random';
 
 @Injectable()
 export class DrawingService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async addDrawing(gameId: number) {
+  async addDrawings(gameId: number) {
     const game = await this.prismaService.game.update({
       where: {
         id: gameId,
       },
       data: {
-        currentRound: { increment: 1 },
+        currentRound: 1,
       },
       include: {
         drawings: true,
@@ -36,9 +37,6 @@ export class DrawingService {
     if (!game) {
       throw new NotFoundException('Game not found');
     }
-    if (game.currentRound !== game.drawings.length + 1) {
-      throw new BadRequestException('Unexpected game state');
-    }
     const gameWordTypes = await this.prismaService.drawingWordType.findMany({
       where: {
         id: { in: game.wordTypes.map((type) => type.id) },
@@ -52,21 +50,23 @@ export class DrawingService {
         id: true,
       },
     });
-    const word = gameWords[Math.floor(Math.random() * gameWords.length)];
+    const words = uniqueRandomFromArray(
+      gameWords.map((word) => word.id),
+      game.players.length * game.drawingsPerPlayer
+    );
 
-    const currentPlayerIndex =
-      game.currentRound % game.players.length === 0
-        ? game.players.length - 1
-        : (game.currentRound % game.players.length) - 1;
-
-    return await this.prismaService.drawing.create({
-      data: {
-        roundNumber: game.currentRound,
-        wordId: word.id,
-        gameId: gameId,
-        gamePlayerId: game.players[currentPlayerIndex].id,
-      },
-    });
+    return await Promise.all(
+      words.map((word, index) =>
+        this.prismaService.drawing.create({
+          data: {
+            roundNumber: index + 1,
+            wordId: word,
+            gameId: gameId,
+            gamePlayerId: game.players[index % game.players.length].id,
+          },
+        })
+      )
+    );
   }
 
   async addDrawingPart(part: AddDrawingPartDto, user: User) {
@@ -107,6 +107,7 @@ export class DrawingService {
     if (user.id !== game.players[currentPlayerIndex]?.user.id) {
       throw new BadRequestException('Not your turn');
     }
+
     return await this.prismaService.drawing.update({
       data: {
         drawingParts: {
@@ -156,23 +157,24 @@ export class DrawingService {
     if (!game) {
       throw new NotFoundException('Game not found');
     }
-    if (game.currentRound > game.drawings.length) {
-      return null;
-    }
 
     const currentPlayerIndex =
       game.currentRound % game.players.length === 0
         ? game.players.length - 1
         : (game.currentRound % game.players.length) - 1;
 
-    const fullDrawing = game.drawings[game.currentRound - 1];
-    return {
-      ...fullDrawing,
-      wordId: undefined,
-      word:
-        user.id === game.players[currentPlayerIndex].user.id
-          ? fullDrawing.word
-          : undefined,
-    } as Drawing;
+    const fullDrawing = game.drawings.find(
+      (drawing) => drawing.roundNumber === game.currentRound
+    );
+    return fullDrawing
+      ? ({
+          ...fullDrawing,
+          wordId: undefined,
+          word:
+            user.id === game.players[currentPlayerIndex].user.id
+              ? fullDrawing.word
+              : undefined,
+        } as Drawing)
+      : null;
   }
 }

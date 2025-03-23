@@ -24,6 +24,8 @@ export class DrawingWordService {
   }
 
   getWords() {
-    return this.prismaService.drawingWord.findMany({ include: { type: true } });
+    return this.prismaService.drawingWord.findMany({
+      include: { type: true },
+    });
   }
 }

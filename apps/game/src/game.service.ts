@@ -6,10 +6,11 @@ import {
 import { CreateGameDto } from './dto/create-game.dto';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { MaxGameDrawings } from '@app/helpers/game';
-import { User } from '@prisma/client';
+import { Game, Prisma, User } from '@prisma/client';
 import { randomCode } from '@app/helpers/random';
 import { SocketService } from '@app/socket/socket.service';
 import { DrawingService } from 'apps/drawing/src/drawing.service';
+import { breakSecondsNumber } from '@app/typings/enums/game';
 
 @Injectable()
 export class GameService {
@@ -27,6 +28,13 @@ export class GameService {
       throw new BadRequestException(
         'Too many drawings for that amount of players'
       );
+    }
+
+    const gameParticipating = await this.prismaService.game.findFirst({
+      where: { players: { some: { userId: user.id } }, endDate: null },
+    });
+    if (gameParticipating) {
+      throw new BadRequestException('You are already in another game');
     }
     let code = randomCode(6);
 
@@ -64,7 +72,7 @@ export class GameService {
 
   async joinGame(code: string, user: User) {
     const gameParticipating = await this.prismaService.game.findFirst({
-      where: { players: { some: { userId: user.id } } },
+      where: { players: { some: { userId: user.id } }, endDate: null },
     });
 
     if (gameParticipating) {
@@ -224,12 +232,60 @@ export class GameService {
       data: { startDate: new Date(), currentRound: 0 },
     });
 
-    await this.drawingService.addDrawing(game.id);
+    await this.drawingService.addDrawings(game.id);
 
     this.socketService.socket
       .to(String(game.id))
       .emit('gameStarted', gameStarted.startDate.toISOString());
 
+    this.sendTime(game);
+
     return gameStarted;
+  }
+
+  sendTime(game: Prisma.GameGetPayload<{ include: { players: true } }>) {
+    let timePassed = 0;
+
+    const interval = setInterval(async () => {
+      timePassed += 1;
+      if (
+        timePassed ===
+        (game.roundDuration + breakSecondsNumber) *
+          game.drawingsPerPlayer *
+          game.players.length
+      ) {
+        this.endGame(game);
+        clearInterval(interval);
+      }
+      if (
+        timePassed % (game.roundDuration + breakSecondsNumber) ===
+        game.roundDuration
+      ) {
+        this.increaseRound(game);
+      }
+      this.socketService.socket
+        .to(String(game.id))
+        .emit('timePassed', timePassed);
+    }, 1000);
+  }
+
+  async increaseRound(game: Game) {
+    await this.prismaService.game.update({
+      where: { id: game.id },
+      data: { currentRound: { increment: 1 } },
+    });
+  }
+
+  async endGame(game: Prisma.GameGetPayload<{ include: { players: true } }>) {
+    const endDate = new Date();
+    await this.prismaService.game.update({
+      data: {
+        endDate,
+      },
+      where: { id: game.id },
+    });
+    this.socketService.socket
+      .to(String(game.id))
+      .emit('gameEnded', { endDate });
   }
 }

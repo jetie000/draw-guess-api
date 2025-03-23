@@ -24,6 +24,8 @@ export class DrawingWordTypeService {
   }
 
   getWordTypes() {
-    return this.prismaService.drawingWordType.findMany();
+    return this.prismaService.drawingWordType.findMany({
+      orderBy: { id: 'asc' },
+    });
   }
 }

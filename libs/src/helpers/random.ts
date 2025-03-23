@@ -5,3 +5,11 @@ export const randomCode = (length: number) =>
   Math.random()
     .toString(36)
     .slice(2, length + 2);
+
+export const uniqueRandomFromArray = (arr: number[], n: number) => {
+  const resultSet = new Set<number>();
+  while (resultSet.size < n) {
+    resultSet.add(arr[Math.floor(Math.random() * arr.length)]);
+  }
+  return Array.from(resultSet);
+};

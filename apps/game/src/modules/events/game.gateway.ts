@@ -118,8 +118,6 @@ export class GameGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() drawingData: AddDrawingPart
   ) {
-    console.log(drawingData);
-
     client.to(String(drawingData.room)).emit('drewPart', drawingData.drawing);
   }
 }
