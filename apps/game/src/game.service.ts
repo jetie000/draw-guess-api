@@ -124,6 +124,7 @@ export class GameService {
               },
             },
           },
+          orderBy: { id: 'asc' },
         },
         wordTypes: true,
       },
@@ -263,6 +264,12 @@ export class GameService {
       ) {
         this.increaseRound(game);
       }
+      if (
+        timePassed % (game.roundDuration + breakSecondsNumber) ===
+        game.roundDuration + 1
+      ) {
+        this.sendUpdatedPlayers(game.id);
+      }
       this.socketService.socket
         .to(String(game.id))
         .emit('timePassed', timePassed);
@@ -274,6 +281,29 @@ export class GameService {
       where: { id: game.id },
       data: { currentRound: { increment: 1 } },
     });
+  }
+
+  async sendUpdatedPlayers(gameId: number) {
+    const game = await this.prismaService.game.findUnique({
+      where: { id: gameId },
+      include: {
+        players: {
+          orderBy: { id: 'asc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                avatarUrl: true,
+                username: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    this.socketService.socket
+      .to(String(gameId))
+      .emit('updatedPlayers', game.players);
   }
 
   async endGame(game: Prisma.GameGetPayload<{ include: { players: true } }>) {

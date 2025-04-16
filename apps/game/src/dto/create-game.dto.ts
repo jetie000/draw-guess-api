@@ -7,12 +7,12 @@ export class CreateGameDto {
   maxPlayers: number;
 
   @IsInt()
-  @Max(90)
+  @Max(120)
   @Min(10)
   roundDuration: number;
 
   @IsInt()
-  @Max(4)
+  @Max(6)
   @Min(1)
   drawingsPerPlayer: number;
 

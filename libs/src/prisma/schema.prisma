@@ -83,8 +83,8 @@ model DrawingPart {
 
 model DrawingMessage {
   id           Int        @id @default(autoincrement())
-  sender       GamePlayer @relation(fields: [gamePlayerId], references: [id])
-  drawing      Drawing    @relation(fields: [drawingId], references: [id])
+  sender       GamePlayer @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
+  drawing      Drawing    @relation(fields: [drawingId], references: [id], onDelete: Cascade)
   drawingId    Int
   sendDate     DateTime
   message      String

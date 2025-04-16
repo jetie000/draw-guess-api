@@ -9,6 +9,7 @@ import { AuthGuard } from '@app/auth/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { DrawingWordModule } from './modules/drawing-word/drawing-word.module';
 import { DrawingWordTypeModule } from './modules/drawing-word-type/drawing-word-type.module';
+import { DrawingMessageModule } from './modules/drawing-message/drawing-message.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DrawingWordTypeModule } from './modules/drawing-word-type/drawing-word-
     RmqModule,
     DrawingWordModule,
     DrawingWordTypeModule,
+    DrawingMessageModule,
   ],
   controllers: [DrawingController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }, DrawingService],

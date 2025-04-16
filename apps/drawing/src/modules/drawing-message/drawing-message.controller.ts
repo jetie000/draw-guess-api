@@ -1,42 +1,48 @@
-// import {
-//   BadRequestException,
-//   Body,
-//   Controller,
-//   Get,
-//   Post,
-//   Query,
-//   Req,
-// } from '@nestjs/common';
-// import { DrawingMessageService } from './drawing-message.service';
-// import { Request } from 'express';
-// import { RmqService } from '@app';
-// import { AddDrawingMessageDto } from './dto/add-drawing-message.dto';
-// import { isInt } from 'class-validator';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
+import { DrawingMessageService } from './drawing-message.service';
+import { Request } from 'express';
+import { RmqService } from '@app';
+import { isInt } from 'class-validator';
+import { DrawingMessageDto } from './dto/drawing-message.dto';
 
-// @Controller('drawing-message')
-// export class DrawingController {
-//   constructor(
-//     private readonly drawingService: DrawingMessageService,
-//     private readonly rmqService: RmqService
-//   ) {}
+@Controller('drawing-message')
+export class DrawingMessageController {
+  constructor(
+    private readonly drawingMessageService: DrawingMessageService,
+    private readonly rmqService: RmqService
+  ) {}
 
-//   @Post()
-//   addDrawingMessage(
-//     @Body() drawingMessage: AddDrawingMessageDto,
-//     @Req() req: Request
-//   ) {
-//     return this.drawingService.addDrawing(drawingMessage, req.user);
-//   }
+  @Post()
+  addDrawingMessage(
+    @Body() drawingMessage: DrawingMessageDto,
+    @Req() req: Request
+  ) {
+    return this.drawingMessageService.addDrawingMessage(
+      drawingMessage,
+      req.user
+    );
+  }
 
-//   @Get('gameCurrent/:gameId')
-//   getDrawingMessages(@Req() req: Request, @Query('gameId') gameId: string) {
-//     const numberId = parseInt(gameId);
-//     if (isInt(numberId) === false) {
-//       throw new BadRequestException('Invalid id');
-//     }
-//     return this.drawingService.getCurrentGameDrawingMessages(
-//       numberId,
-//       req.user
-//     );
-//   }
-// }
+  @Get('drawing/:drawingId')
+  getDrawingMessages(
+    @Req() req: Request,
+    @Param('drawingId') drawingId: string
+  ) {
+    const numberId = parseInt(drawingId);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.drawingMessageService.getCurrentDrawingMessages(
+      numberId,
+      req.user
+    );
+  }
+}

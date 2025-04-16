@@ -92,6 +92,7 @@ export class DrawingService {
               },
             },
           },
+          orderBy: { id: 'asc' },
         },
         wordTypes: true,
       },
