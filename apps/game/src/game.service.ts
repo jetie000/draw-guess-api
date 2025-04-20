@@ -132,7 +132,22 @@ export class GameService {
     if (!game) {
       throw new NotFoundException('Game not found');
     }
-    return game;
+    const drawings = game.endDate
+      ? await this.prismaService.drawing.findMany({
+          where: { gameId: game.id },
+          include: {
+            drawingParts: true,
+            word: true,
+            gamePlayer: {
+              include: {
+                user: { select: { id: true, avatarUrl: true, username: true } },
+              },
+            },
+          },
+          orderBy: { roundNumber: 'asc' },
+        })
+      : null;
+    return { ...game, drawings };
   }
 
   async getParticipatingGames(user: User, isEnded: boolean) {
@@ -264,12 +279,6 @@ export class GameService {
       ) {
         this.increaseRound(game);
       }
-      if (
-        timePassed % (game.roundDuration + breakSecondsNumber) ===
-        game.roundDuration + 1
-      ) {
-        this.sendUpdatedPlayers(game.id);
-      }
       this.socketService.socket
         .to(String(game.id))
         .emit('timePassed', timePassed);
@@ -281,6 +290,7 @@ export class GameService {
       where: { id: game.id },
       data: { currentRound: { increment: 1 } },
     });
+    this.sendUpdatedPlayers(game.id);
   }
 
   async sendUpdatedPlayers(gameId: number) {

@@ -152,6 +152,7 @@ export class DrawingService {
               },
             },
           },
+          orderBy: { id: 'asc' },
         },
       },
     });
