@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -19,6 +21,10 @@ import { MILLISECONDS_IN_A_DAY } from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignInGoogleDto } from './dto/sign-in-google.dto';
 import { AuthGuard } from '@app/auth/auth.guard';
+import { UserRole } from '@app/typings/enums/account';
+import { Roles } from '@app/auth/roles.decorator';
+import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
+import { isInt } from 'class-validator';
 
 @Controller('user')
 export class AccountController {
@@ -120,6 +126,52 @@ export class AccountController {
       loginDate: request.user.loginDate,
       avatarUrl: request.user.avatarUrl,
       role: request.user.role,
+      type: request.user.type,
+      access: request.user.access,
     };
+  }
+
+  @Get('all')
+  @UseGuards(AuthGuard)
+  @Roles([UserRole.ADMIN])
+  getAll() {
+    return this.accountService.getAll();
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  async patchUser(
+    @Req() request: Request,
+    @Body() patchUserDto: UpdateUserDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const tokens = await this.accountService.patchUser(
+      request.user.id,
+      patchUserDto
+    );
+    response.cookie('refreshToken', tokens.refreshToken, {
+      maxAge:
+        Number(
+          String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)
+        ) * MILLISECONDS_IN_A_DAY,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+    return { accessToken: tokens.accessToken };
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  @Roles([UserRole.ADMIN])
+  patchUserAdmin(
+    @Param('id') id: string,
+    @Body() patchUserDto: UpdateUserAdminDto
+  ) {
+    const numberId = parseInt(id);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.accountService.patchUserAdmin(numberId, patchUserDto);
   }
 }

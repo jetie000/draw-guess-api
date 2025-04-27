@@ -12,6 +12,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { GoogleModule } from './modules/google/google.module';
+import { RolesGuard } from '@app/auth/roles.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -55,6 +57,12 @@ import { GoogleModule } from './modules/google/google.module';
     GoogleModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    AccountService,
+  ],
 })
 export class AccountModule {}

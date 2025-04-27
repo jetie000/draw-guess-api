@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
-import { RolesController } from './roles.decorator';
+import { Roles } from './roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const requiredRolesController = this.reflector.get(
-      RolesController,
+      Roles,
       context.getClass()
     );
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(

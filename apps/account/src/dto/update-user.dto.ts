@@ -1,18 +1,31 @@
 import {
-  IsEmail,
+  IsBoolean,
   IsNotEmpty,
+  IsNumber,
   IsString,
+  IsOptional,
   IsStrongPassword,
 } from 'class-validator';
 
-export class SignUpDto {
-  @IsEmail()
-  email: string;
-
+export class UpdateUserDto {
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
   username: string;
+}
 
+export class UpdateUserAdminDto extends UpdateUserDto {
+  @IsOptional()
+  @IsNumber()
+  @IsNotEmpty()
+  role: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @IsNotEmpty()
+  access: string;
+
+  @IsOptional()
   @IsStrongPassword(
     {
       minLength: 8,

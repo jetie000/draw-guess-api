@@ -12,10 +12,10 @@ import { DrawingWordTypeService } from './drawing-word-type.service';
 import { WordTypeDto } from './dto/word-type.dto';
 import { isInt } from 'class-validator';
 import { UserRole } from '@app/typings/enums/account';
-import { RolesController } from '@app/auth/roles.decorator';
+import { Roles } from '@app/auth/roles.decorator';
 import { Public } from '@app/auth/public.decorator';
 
-@RolesController([UserRole.ADMIN])
+@Roles([UserRole.ADMIN])
 @Controller('drawing-word-type')
 export class DrawingWordTypeController {
   constructor(private readonly wordTypeService: DrawingWordTypeService) {}

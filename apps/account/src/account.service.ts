@@ -22,7 +22,8 @@ import { CODE_LENGTH } from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleService } from './modules/google/google.service';
 import { JwtPayload } from '@app/typings/interfaces/jwt-payload.interface';
-import { AccountType } from '@app/typings/enums/account';
+import { AccountType, UserRole } from '@app/typings/enums/account';
+import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AccountService {
@@ -114,7 +115,7 @@ export class AccountService {
           refreshToken: tokens.refreshToken,
           access: true,
           avatarUrl: googleInfo.picture,
-          role: 0,
+          role: UserRole.USER,
           type: AccountType.GOOGLE,
         },
       });
@@ -175,7 +176,7 @@ export class AccountService {
         refreshToken: tokens.refreshToken,
         access: true,
         avatarUrl: null,
-        role: 0,
+        role: UserRole.USER,
       },
     });
   }
@@ -275,5 +276,91 @@ export class AccountService {
     });
 
     return tokens;
+  }
+
+  async getAll() {
+    return this.prismaService.user.findMany({
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        access: true,
+        avatarUrl: true,
+        loginDate: true,
+        joinDate: true,
+        role: true,
+        type: true,
+      },
+    });
+  }
+
+  async patchUser(id: number, patchUserDto: UpdateUserDto) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const tokens = await this.generateTokens({
+      username: patchUserDto.username,
+      email: user.email,
+      type: user.type,
+    });
+    await this.prismaService.user.update({
+      where: { id },
+      data: { ...patchUserDto, refreshToken: tokens.refreshToken },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatarUrl: true,
+      },
+    });
+    return tokens;
+  }
+
+  async patchUserAdmin(id: number, patchUserDto: UpdateUserAdminDto) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const tokens = await this.generateTokens({
+      username: patchUserDto.username,
+      email: user.email,
+      type: user.type,
+    });
+    const typedDto = {
+      username: patchUserDto.username,
+      role: patchUserDto.role && Number(patchUserDto.role),
+      access: patchUserDto.access && Boolean(patchUserDto.access),
+      password:
+        patchUserDto.password &&
+        (await hash(
+          patchUserDto.password,
+          this.configService.get('HASH_SALT')
+        )),
+      refreshToken: tokens.refreshToken,
+    };
+    if (![0, 1].includes(typedDto.role)) {
+      throw new BadRequestException('Wrong role');
+    }
+    return this.prismaService.user.update({
+      where: { id },
+      data: typedDto,
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        access: true,
+        avatarUrl: true,
+        loginDate: true,
+        joinDate: true,
+        role: true,
+        type: true,
+      },
+    });
   }
 }

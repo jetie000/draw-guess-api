@@ -13,9 +13,9 @@ import { WordDto } from './dto/word.dto';
 import { isInt } from 'class-validator';
 import { UserRole } from '@app/typings/enums/account';
 import { Public } from '@app/auth/public.decorator';
-import { RolesController } from '@app/auth/roles.decorator';
+import { Roles } from '@app/auth/roles.decorator';
 
-@RolesController([UserRole.ADMIN])
+@Roles([UserRole.ADMIN])
 @Controller('drawing-word')
 export class DrawingWordController {
   constructor(private readonly drawingWordService: DrawingWordService) {}
