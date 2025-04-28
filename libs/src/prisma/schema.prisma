@@ -25,6 +25,7 @@ model User {
   type         Int          @default(0)
   joinDate     DateTime
   loginDate    DateTime
+  experience   Int          @default(0)
   resetCode    String?
   gamePlayers  GamePlayer[]
   createdGames Game[]

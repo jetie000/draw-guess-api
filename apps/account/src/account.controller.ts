@@ -128,6 +128,7 @@ export class AccountController {
       role: request.user.role,
       type: request.user.type,
       access: request.user.access,
+      experience: request.user.experience,
     };
   }
 

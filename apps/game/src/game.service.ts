@@ -121,6 +121,7 @@ export class GameService {
                 id: true,
                 avatarUrl: true,
                 username: true,
+                experience: true,
               },
             },
           },
@@ -138,11 +139,6 @@ export class GameService {
           include: {
             drawingParts: true,
             word: true,
-            gamePlayer: {
-              include: {
-                user: { select: { id: true, avatarUrl: true, username: true } },
-              },
-            },
           },
           orderBy: { roundNumber: 'asc' },
         })
@@ -264,36 +260,41 @@ export class GameService {
 
     const interval = setInterval(async () => {
       timePassed += 1;
-      if (
-        timePassed ===
+      const timeToEndGame =
         (game.roundDuration + breakSecondsNumber) *
-          game.drawingsPerPlayer *
-          game.players.length
-      ) {
-        this.endGame(game);
+        game.drawingsPerPlayer *
+        game.players.length;
+
+      if (timePassed === timeToEndGame) {
+        this.endGame(game.id);
         clearInterval(interval);
       }
+
       if (
         timePassed % (game.roundDuration + breakSecondsNumber) ===
         game.roundDuration
       ) {
-        this.increaseRound(game);
+        this.increaseRound(
+          game,
+          timePassed === timeToEndGame - breakSecondsNumber
+        );
       }
+
       this.socketService.socket
         .to(String(game.id))
         .emit('timePassed', timePassed);
     }, 1000);
   }
 
-  async increaseRound(game: Game) {
+  async increaseRound(game: Game, isLastRound: boolean) {
     await this.prismaService.game.update({
       where: { id: game.id },
       data: { currentRound: { increment: 1 } },
     });
-    this.sendUpdatedPlayers(game.id);
+    this.sendUpdatedPlayers(game.id, isLastRound);
   }
 
-  async sendUpdatedPlayers(gameId: number) {
+  async sendUpdatedPlayers(gameId: number, isLastRound: boolean) {
     const game = await this.prismaService.game.findUnique({
       where: { id: gameId },
       include: {
@@ -305,27 +306,58 @@ export class GameService {
                 id: true,
                 avatarUrl: true,
                 username: true,
+                experience: true,
               },
             },
           },
         },
       },
     });
+    if (isLastRound) {
+      await this.prismaService.$transaction(async (prisma) => {
+        game.players = await Promise.all(
+          game.players.map(async (player) => {
+            await prisma.user.update({
+              where: { id: player.userId },
+              data: { experience: { increment: player.points } },
+            });
+            console.log('userId ' + player.userId, ' points ' + player.points);
+
+            return {
+              ...player,
+              user: {
+                ...player.user,
+                experience: player.user.experience + player.points,
+              },
+            };
+          })
+        );
+      });
+    }
     this.socketService.socket
       .to(String(gameId))
       .emit('updatedPlayers', game.players);
   }
 
-  async endGame(game: Prisma.GameGetPayload<{ include: { players: true } }>) {
+  async endGame(gameId: number) {
     const endDate = new Date();
-    await this.prismaService.game.update({
+    const game = await this.prismaService.game.update({
       data: {
         endDate,
       },
-      where: { id: game.id },
+      where: { id: gameId },
+      include: {
+        drawings: {
+          include: {
+            drawingParts: true,
+            word: true,
+          },
+          orderBy: { roundNumber: 'asc' },
+        },
+      },
     });
     this.socketService.socket
       .to(String(game.id))
-      .emit('gameEnded', { endDate });
+      .emit('gameEnded', { endDate, drawings: game.drawings });
   }
 }

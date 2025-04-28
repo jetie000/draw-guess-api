@@ -291,6 +291,7 @@ export class AccountService {
         joinDate: true,
         role: true,
         type: true,
+        experience: true,
       },
     });
   }
@@ -360,6 +361,7 @@ export class AccountService {
         joinDate: true,
         role: true,
         type: true,
+        experience: true,
       },
     });
   }
