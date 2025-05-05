@@ -34,6 +34,11 @@ export class DrawingController {
     return this.drawingService.getCurrentGameDrawing(numberId, req.user);
   }
 
+  @Get('my')
+  getMyDrawings(@Req() req: Request) {
+    return this.drawingService.getMyDrawings(req.user);
+  }
+
   // TODO: implement rmq
   // @EventPattern('hello')
   // handleHello(@Payload() data: string, @Ctx() context: RmqContext) {

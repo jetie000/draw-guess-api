@@ -179,4 +179,14 @@ export class DrawingService {
         } as Drawing)
       : null;
   }
+
+  getMyDrawings(user: User) {
+    return this.prismaService.drawing.findMany({
+      where: { gamePlayer: { userId: user.id } },
+      include: {
+        drawingParts: true,
+        word: true,
+      },
+    });
+  }
 }
