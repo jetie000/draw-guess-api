@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { GamePlayerService } from 'apps/game/src/modules/game-player/game-player.service';
 import { breakSecondsNumber } from '@app/typings/enums/game';
 import { calculatePoints } from '@app/helpers/game';
+import { getGuessedLettersFromMessages } from '@app/helpers/messages';
 
 @Injectable()
 export class DrawingMessageService {
@@ -90,6 +91,15 @@ export class DrawingMessageService {
     return {
       isGuessed,
       updatedPoints: updatedPoints,
+      guessedLetters: drawing.game.isSimplified
+        ? getGuessedLettersFromMessages(
+            [
+              ...messages.map((message) => message.message),
+              drawingMessage.message,
+            ],
+            drawing.word.word
+          )
+        : null,
       message: await this.prismaService.drawingMessage.create({
         data: {
           message: drawingMessage.message,
@@ -125,6 +135,12 @@ export class DrawingMessageService {
           (message) =>
             message.message.toLowerCase() === drawing.word.word.toLowerCase()
         ) !== -1,
+      guessedLetters: drawing.game.isSimplified
+        ? getGuessedLettersFromMessages(
+            messages.map((message) => message.message),
+            drawing.word.word
+          )
+        : null,
       messages,
     };
   }

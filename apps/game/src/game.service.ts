@@ -53,6 +53,7 @@ export class GameService {
         drawingsPerPlayer: createGameDto.drawingsPerPlayer,
         maxPlayers: createGameDto.maxPlayers,
         isPrivate: createGameDto.isPrivate,
+        isSimplified: createGameDto.isSimplified,
         roundDuration: createGameDto.roundDuration,
         wordTypes: {
           connect: createGameDto.wordTypeIds.map((id) => ({ id })),
@@ -166,6 +167,7 @@ export class GameService {
         },
         wordTypes: true,
       },
+      orderBy: { id: 'desc' },
     });
   }
 
@@ -321,7 +323,6 @@ export class GameService {
               where: { id: player.userId },
               data: { experience: { increment: player.points } },
             });
-            console.log('userId ' + player.userId, ' points ' + player.points);
 
             return {
               ...player,

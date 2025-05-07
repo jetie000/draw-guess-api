@@ -38,7 +38,8 @@ model Game {
   creatorId         Int
   drawings          Drawing[]
   players           GamePlayer[]
-  isPrivate         Boolean
+  isPrivate         Boolean           @default(true)
+  isSimplified      Boolean           @default(false)
   maxPlayers        Int
   roundDuration     Int
   drawingsPerPlayer Int

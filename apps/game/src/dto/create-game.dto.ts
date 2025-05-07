@@ -17,6 +17,9 @@ export class CreateGameDto {
   drawingsPerPlayer: number;
 
   @IsBoolean()
+  isSimplified: boolean;
+
+  @IsBoolean()
   isPrivate: boolean;
 
   @IsArray()
