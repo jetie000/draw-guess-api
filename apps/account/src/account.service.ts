@@ -3,13 +3,10 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { DRAWING_RABBITMQ_QUEUE } from '@app/rmq/constants';
-import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -24,6 +21,7 @@ import { GoogleService } from './modules/google/google.service';
 import { JwtPayload } from '@app/typings/interfaces/jwt-payload.interface';
 import { AccountType, UserRole } from '@app/typings/enums/account';
 import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
+import { AchievementsService } from './modules/achievements/achievements.service';
 
 @Injectable()
 export class AccountService {
@@ -33,7 +31,7 @@ export class AccountService {
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
     private readonly googleService: GoogleService,
-    @Inject(DRAWING_RABBITMQ_QUEUE) private drawingClient: ClientProxy
+    private readonly achievementsService: AchievementsService
   ) {}
 
   async generateTokens(payload: JwtPayload) {
@@ -105,7 +103,7 @@ export class AccountService {
     });
 
     if (!userTofind) {
-      await this.prismaService.user.create({
+      const userCreated = await this.prismaService.user.create({
         data: {
           email: googleInfo.email,
           username: googleInfo.name,
@@ -119,6 +117,7 @@ export class AccountService {
           type: AccountType.GOOGLE,
         },
       });
+      await this.achievementsService.createEmptyAchievements(userCreated);
 
       return tokens;
     } else {
@@ -179,6 +178,8 @@ export class AccountService {
         role: UserRole.USER,
       },
     });
+
+    await this.achievementsService.createEmptyAchievements(userToFind);
   }
 
   async requestCode(email: string) {

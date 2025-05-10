@@ -9,16 +9,12 @@ import {
 } from '@nestjs/common';
 import { DrawingMessageService } from './drawing-message.service';
 import { Request } from 'express';
-import { RmqService } from '@app';
 import { isInt } from 'class-validator';
 import { DrawingMessageDto } from './dto/drawing-message.dto';
 
 @Controller('drawing-message')
 export class DrawingMessageController {
-  constructor(
-    private readonly drawingMessageService: DrawingMessageService,
-    private readonly rmqService: RmqService
-  ) {}
+  constructor(private readonly drawingMessageService: DrawingMessageService) {}
 
   @Post()
   addDrawingMessage(

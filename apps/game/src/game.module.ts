@@ -9,6 +9,7 @@ import { AuthGuard } from '@app/auth/auth.guard';
 import { GuardModule } from '@app/auth/guard.module';
 import { GameEventsModule } from './modules/events/game-events.module';
 import { DrawingService } from 'apps/drawing/src/drawing.service';
+import { AchievementsService } from 'apps/account/src/modules/achievements/achievements.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DrawingService } from 'apps/drawing/src/drawing.service';
     { provide: APP_GUARD, useClass: AuthGuard },
     GameService,
     DrawingService,
+    AchievementsService,
   ],
 })
 export class GameModule {}

@@ -11,13 +11,15 @@ import { randomCode } from '@app/helpers/random';
 import { SocketService } from '@app/socket/socket.service';
 import { DrawingService } from 'apps/drawing/src/drawing.service';
 import { breakSecondsNumber } from '@app/typings/enums/game';
+import { AchievementsService } from 'apps/account/src/modules/achievements/achievements.service';
 
 @Injectable()
 export class GameService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly socketService: SocketService,
-    private readonly drawingService: DrawingService
+    private readonly drawingService: DrawingService,
+    private readonly achievementsService: AchievementsService
   ) {}
 
   async createGame(createGameDto: CreateGameDto, user: User) {
@@ -319,6 +321,10 @@ export class GameService {
       await this.prismaService.$transaction(async (prisma) => {
         game.players = await Promise.all(
           game.players.map(async (player) => {
+            this.achievementsService.recalculateAchievements(
+              player.user,
+              gameId
+            );
             await prisma.user.update({
               where: { id: player.userId },
               data: { experience: { increment: player.points } },

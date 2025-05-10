@@ -45,12 +45,14 @@ export class DrawingMessageService {
       throw new BadRequestException('Game in break phase');
     }
 
+    const roundMillisecondsPassed =
+      timePassed -
+      (drawing.game.currentRound - 1) *
+        (drawing.game.roundDuration + breakSecondsNumber) *
+        1000;
+
     const roundPartPassed =
-      (timePassed -
-        (drawing.game.currentRound - 1) *
-          (drawing.game.roundDuration + breakSecondsNumber) *
-          1000) /
-      (drawing.game.roundDuration * 1000);
+      roundMillisecondsPassed / (drawing.game.roundDuration * 1000);
 
     const messages = await this.prismaService.drawingMessage.findMany({
       where: {
@@ -102,6 +104,9 @@ export class DrawingMessageService {
         : null,
       message: await this.prismaService.drawingMessage.create({
         data: {
+          isGuessed,
+          isFirst: messages.length === 0,
+          secondsPassedAfterRound: roundMillisecondsPassed / 1000,
           message: drawingMessage.message,
           drawingId: drawingMessage.drawingId,
           sendDate: new Date(),

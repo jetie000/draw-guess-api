@@ -14,21 +14,22 @@ datasource db {
 }
 
 model User {
-  id           Int          @id @default(autoincrement())
-  email        String       @unique
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
   password     String
   username     String
   role         Int
   access       Boolean
   avatarUrl    String?
   refreshToken String
-  type         Int          @default(0)
+  type         Int           @default(0)
   joinDate     DateTime
   loginDate    DateTime
-  experience   Int          @default(0)
+  experience   Int           @default(0)
   resetCode    String?
   gamePlayers  GamePlayer[]
   createdGames Game[]
+  achievements Achievement[]
 }
 
 model Game {
@@ -84,13 +85,16 @@ model DrawingPart {
 }
 
 model DrawingMessage {
-  id           Int        @id @default(autoincrement())
-  sender       GamePlayer @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
-  drawing      Drawing    @relation(fields: [drawingId], references: [id], onDelete: Cascade)
-  drawingId    Int
-  sendDate     DateTime
-  message      String
-  gamePlayerId Int
+  id                      Int        @id @default(autoincrement())
+  sender                  GamePlayer @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
+  drawing                 Drawing    @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  drawingId               Int
+  sendDate                DateTime
+  message                 String
+  isGuessed               Boolean
+  isFirst                 Boolean
+  secondsPassedAfterRound Float
+  gamePlayerId            Int
 }
 
 model DrawingWord {
@@ -106,4 +110,23 @@ model DrawingWordType {
   type         String
   drawingWords DrawingWord[]
   games        Game[]
+}
+
+model AchievementType {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String
+  achievements Achievement[]
+  level1Amount Int
+  level2Amount Int
+  level3Amount Int
+}
+
+model Achievement {
+  id     Int             @id @default(autoincrement())
+  type   AchievementType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  typeId Int
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  level  Int
 }

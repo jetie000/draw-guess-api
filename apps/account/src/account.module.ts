@@ -14,6 +14,8 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { GoogleModule } from './modules/google/google.module';
 import { RolesGuard } from '@app/auth/roles.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { AchievementsModule } from './modules/achievements/achievements.module';
+import { AchievementsService } from './modules/achievements/achievements.service';
 
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { APP_GUARD } from '@nestjs/core';
     RmqModule.register({ name: DRAWING_RABBITMQ_QUEUE }),
     RmqModule.register({ name: GAME_RABBITMQ_QUEUE }),
     GoogleModule,
+    AchievementsModule,
   ],
   controllers: [AccountController],
   providers: [
@@ -62,6 +65,7 @@ import { APP_GUARD } from '@nestjs/core';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    AchievementsService,
     AccountService,
   ],
 })
