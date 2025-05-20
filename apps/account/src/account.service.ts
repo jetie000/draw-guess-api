@@ -165,7 +165,7 @@ export class AccountService {
       type: AccountType.EMAIL,
     });
 
-    await this.prismaService.user.create({
+    const userCreated = await this.prismaService.user.create({
       data: {
         email: signUpDto.email,
         username: signUpDto.username,
@@ -179,7 +179,7 @@ export class AccountService {
       },
     });
 
-    await this.achievementsService.createEmptyAchievements(userToFind);
+    await this.achievementsService.createEmptyAchievements(userCreated);
   }
 
   async requestCode(email: string) {
