@@ -2,12 +2,7 @@ import { Module } from '@nestjs/common';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { PrismaModule } from '@app';
-import { RmqModule } from '@app/rmq/rmq.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import {
-  DRAWING_RABBITMQ_QUEUE,
-  GAME_RABBITMQ_QUEUE,
-} from '@app/rmq/constants';
 import { JwtModule } from '@nestjs/jwt';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
@@ -54,8 +49,6 @@ import { AchievementsService } from './modules/achievements/achievements.service
       inject: [ConfigService],
     }),
     PrismaModule,
-    RmqModule.register({ name: DRAWING_RABBITMQ_QUEUE }),
-    RmqModule.register({ name: GAME_RABBITMQ_QUEUE }),
     GoogleModule,
     AchievementsModule,
   ],

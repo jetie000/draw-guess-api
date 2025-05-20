@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DrawingController } from './drawing.controller';
 import { DrawingService } from './drawing.service';
-import { RmqModule } from '@app/rmq/rmq.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@app';
 import { GuardModule } from '@app/auth/guard.module';
@@ -19,7 +18,6 @@ import { DrawingMessageModule } from './modules/drawing-message/drawing-message.
     }),
     GuardModule,
     PrismaModule,
-    RmqModule,
     DrawingWordModule,
     DrawingWordTypeModule,
     DrawingMessageModule,
