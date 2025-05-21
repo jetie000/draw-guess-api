@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(GameModule);
   app.useGlobalPipes(new ValidationPipe());
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api_game');
   const configService = app.get(ConfigService);
   await app.startAllMicroservices();
 
