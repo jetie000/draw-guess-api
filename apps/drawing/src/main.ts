@@ -6,7 +6,6 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(DrawingModule);
   app.useGlobalPipes(new ValidationPipe());
-  app.setGlobalPrefix('api_drawing');
   const configService = app.get(ConfigService);
   await app.startAllMicroservices();
 
