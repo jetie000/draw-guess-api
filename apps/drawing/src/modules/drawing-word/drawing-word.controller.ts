@@ -12,10 +12,9 @@ import { DrawingWordService } from './drawing-word.service';
 import { WordDto } from './dto/word.dto';
 import { isInt } from 'class-validator';
 import { UserRole } from '@app/typings/enums/account';
-import { Public } from '@app/auth/public.decorator';
 import { Roles } from '@app/auth/roles.decorator';
 
-@Roles([UserRole.ADMIN])
+@Roles(UserRole.ADMIN)
 @Controller('drawing-word')
 export class DrawingWordController {
   constructor(private readonly drawingWordService: DrawingWordService) {}
@@ -25,7 +24,6 @@ export class DrawingWordController {
     return this.drawingWordService.addWord(word);
   }
 
-  @Public()
   @Get()
   getDrawingWords() {
     return this.drawingWordService.getWords();

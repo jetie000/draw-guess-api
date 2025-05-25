@@ -25,6 +25,7 @@ import { UserRole } from '@app/typings/enums/account';
 import { Roles } from '@app/auth/roles.decorator';
 import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
 import { isInt } from 'class-validator';
+import { RolesGuard } from '@app/auth/roles.guard';
 
 @Controller('user')
 export class AccountController {
@@ -133,8 +134,8 @@ export class AccountController {
   }
 
   @Get('all')
-  @UseGuards(AuthGuard)
-  @Roles([UserRole.ADMIN])
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   getAll() {
     return this.accountService.getAll();
   }
@@ -146,10 +147,9 @@ export class AccountController {
     @Body() patchUserDto: UpdateUserDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const tokens = await this.accountService.patchUser(
-      request.user.id,
-      patchUserDto
-    );
+    const tokens = await this.accountService.patchUser(request.user.id, {
+      username: patchUserDto.username,
+    });
     response.cookie('refreshToken', tokens.refreshToken, {
       maxAge:
         Number(
@@ -163,8 +163,8 @@ export class AccountController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
-  @Roles([UserRole.ADMIN])
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   patchUserAdmin(
     @Param('id') id: string,
     @Body() patchUserDto: UpdateUserAdminDto

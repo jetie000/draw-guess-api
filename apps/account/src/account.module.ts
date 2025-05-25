@@ -7,10 +7,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { GoogleModule } from './modules/google/google.module';
-import { RolesGuard } from '@app/auth/roles.guard';
-import { APP_GUARD } from '@nestjs/core';
 import { AchievementsModule } from './modules/achievements/achievements.module';
 import { AchievementsService } from './modules/achievements/achievements.service';
+import { GuardModule } from '@app/auth/guard.module';
 
 @Module({
   imports: [
@@ -48,18 +47,12 @@ import { AchievementsService } from './modules/achievements/achievements.service
       }),
       inject: [ConfigService],
     }),
+    GuardModule,
     PrismaModule,
     GoogleModule,
     AchievementsModule,
   ],
   controllers: [AccountController],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-    AchievementsService,
-    AccountService,
-  ],
+  providers: [AchievementsService, AccountService],
 })
 export class AccountModule {}

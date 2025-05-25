@@ -15,7 +15,7 @@ import { UserRole } from '@app/typings/enums/account';
 import { Roles } from '@app/auth/roles.decorator';
 import { Public } from '@app/auth/public.decorator';
 
-@Roles([UserRole.ADMIN])
+@Roles(UserRole.ADMIN)
 @Controller('drawing-word-type')
 export class DrawingWordTypeController {
   constructor(private readonly wordTypeService: DrawingWordTypeService) {}
