@@ -9,3 +9,9 @@ export enum UserRole {
 }
 
 export const ROLES_KEY = 'roles-guard-key';
+
+export enum LeaderboardTypes {
+  Points = 'points',
+  Wins = 'wins',
+  WordsGuessed = 'words-guessed',
+}

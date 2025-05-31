@@ -1,6 +1,9 @@
 import { DrawingMessage, Prisma, User } from '@prisma/client';
 import { MILLISECONDS_IN_A_DAY } from './constants';
-import { AchievementsTypeIds } from '@app/typings/enums/achievements';
+import {
+  AchievementsTypeIds,
+  QuickGuessSeconds,
+} from '@app/typings/enums/achievements';
 
 export const calculateAchievementLevel = (
   amount: number,
@@ -85,7 +88,7 @@ export const getMyMessagesStats = (drawingMessages: DrawingMessage[]) => {
       (message) => message.isFirst
     ).length,
     [AchievementsTypeIds.QuickQuesses]: drawingMessages.filter(
-      (message) => message.secondsPassedAfterRound <= 5
+      (message) => message.secondsPassedAfterRound <= QuickGuessSeconds
     ).length,
   };
 };

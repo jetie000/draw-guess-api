@@ -188,7 +188,7 @@ export class DrawingService {
         word: true,
       },
       orderBy: {
-        id: 'asc',
+        id: 'desc',
       },
     });
   }

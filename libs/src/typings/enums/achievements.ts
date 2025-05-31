@@ -8,3 +8,7 @@ export enum AchievementsTypeIds {
   DailyGames,
   ConsecutiveDaysPlaying,
 }
+
+export const QuickGuessSeconds = 10;
+
+export const moneyForAchievementAmountByLevel = [100, 250, 500];

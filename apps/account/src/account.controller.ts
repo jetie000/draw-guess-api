@@ -21,7 +21,7 @@ import { MILLISECONDS_IN_A_DAY } from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignInGoogleDto } from './dto/sign-in-google.dto';
 import { AuthGuard } from '@app/auth/auth.guard';
-import { UserRole } from '@app/typings/enums/account';
+import { LeaderboardTypes, UserRole } from '@app/typings/enums/account';
 import { Roles } from '@app/auth/roles.decorator';
 import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
 import { isInt } from 'class-validator';
@@ -130,6 +130,7 @@ export class AccountController {
       type: request.user.type,
       access: request.user.access,
       experience: request.user.experience,
+      money: request.user.money,
     };
   }
 
@@ -174,5 +175,24 @@ export class AccountController {
       throw new BadRequestException('Invalid id');
     }
     return this.accountService.patchUserAdmin(numberId, patchUserDto);
+  }
+
+  @Get('leaderboard/:type/:days')
+  @UseGuards(AuthGuard)
+  getLeaderboard(@Param('type') type: string, @Param('days') days: string) {
+    const daysNumber = parseInt(days);
+    if (isInt(daysNumber) === false) {
+      throw new BadRequestException('Invalid days number');
+    }
+    switch (type) {
+      case LeaderboardTypes.Points:
+        return this.accountService.getLeaderboardByPoints(daysNumber);
+      case LeaderboardTypes.Wins:
+        return this.accountService.getLeaderboardByWins(daysNumber);
+      case LeaderboardTypes.WordsGuessed:
+        return this.accountService.getLeaderboardByWordsGuessed(daysNumber);
+      default:
+        throw new BadRequestException('Invalid type');
+    }
   }
 }

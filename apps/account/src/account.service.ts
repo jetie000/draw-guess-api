@@ -15,13 +15,22 @@ import { SignUpDto } from './dto/sign-up.dto';
 import { compare, hash } from 'bcrypt';
 import { randomNumCode } from '@app/helpers/random';
 import { MailerService } from '@nestjs-modules/mailer';
-import { CODE_LENGTH } from '@app/helpers/constants';
+import {
+  CODE_LENGTH,
+  LeaderboardPlayersNumber,
+  MILLISECONDS_IN_A_DAY,
+} from '@app/helpers/constants';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleService } from './modules/google/google.service';
 import { JwtPayload } from '@app/typings/interfaces/jwt-payload.interface';
 import { AccountType, UserRole } from '@app/typings/enums/account';
 import { UpdateUserAdminDto, UpdateUserDto } from './dto/update-user.dto';
 import { AchievementsService } from './modules/achievements/achievements.service';
+import {
+  PublicUserWithPoints,
+  PublicUserWithWins,
+  PublicUserWithWordsGuessed,
+} from '@app/typings/interfaces/account';
 
 @Injectable()
 export class AccountService {
@@ -277,6 +286,118 @@ export class AccountService {
     });
 
     return tokens;
+  }
+
+  async getLeaderboardByPoints(days: number) {
+    const players = await this.prismaService.gamePlayer.findMany({
+      where: {
+        game: {
+          endDate: { gte: new Date(Date.now() - days * MILLISECONDS_IN_A_DAY) },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+            experience: true,
+          },
+        },
+      },
+    });
+    const usersWithPointsByUserId = players.reduce(
+      (acc, player) => ({
+        ...acc,
+        [player.user.id]: {
+          ...player.user,
+          points: (acc[player.user.id]?.points || 0) + player.points,
+        },
+      }),
+      {} as Record<number, PublicUserWithPoints>
+    );
+    return Object.values(usersWithPointsByUserId)
+      .sort((a, b) => b.points - a.points)
+      .slice(0, LeaderboardPlayersNumber);
+  }
+
+  async getLeaderboardByWins(days: number) {
+    const games = await this.prismaService.game.findMany({
+      where: {
+        endDate: { gte: new Date(Date.now() - days * MILLISECONDS_IN_A_DAY) },
+      },
+      include: {
+        players: {
+          orderBy: { points: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatarUrl: true,
+                experience: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const winners = games.reduce((acc, game) => {
+      return [
+        ...acc,
+        ...game.players.filter((p) => p.points === game.players[0].points),
+      ];
+    }, []);
+    const userWinners: Record<number, PublicUserWithWins> = winners.reduce(
+      (acc, player) => ({
+        ...acc,
+        [player.user.id]: {
+          ...player.user,
+          wins: (acc[player.user.id]?.wins || 0) + 1,
+        },
+      }),
+      {} as Record<number, PublicUserWithWins>
+    );
+    return Object.values(userWinners)
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, LeaderboardPlayersNumber);
+  }
+
+  async getLeaderboardByWordsGuessed(days: number) {
+    const wordsGuessed = await this.prismaService.drawingMessage.findMany({
+      where: {
+        sendDate: { gte: new Date(Date.now() - days * MILLISECONDS_IN_A_DAY) },
+        isGuessed: true,
+      },
+      include: {
+        sender: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatarUrl: true,
+                experience: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const userGuessers = wordsGuessed.reduce(
+      (acc, word) => ({
+        ...acc,
+        [word.sender.user.id]: {
+          ...word.sender.user,
+          wordsGuessed: (acc[word.sender.user.id]?.wordsGuessed || 0) + 1,
+        },
+      }),
+      {} as Record<number, PublicUserWithWordsGuessed>
+    );
+    return Object.values(userGuessers)
+      .sort((a, b) => b.wordsGuessed - a.wordsGuessed)
+      .slice(0, LeaderboardPlayersNumber);
   }
 
   async getAll() {
