@@ -96,6 +96,7 @@ model DrawingMessage {
   isGuessed               Boolean
   isFirst                 Boolean
   secondsPassedAfterRound Float
+  isLetterBought          Boolean    @default(false)
   gamePlayerId            Int
 }
 

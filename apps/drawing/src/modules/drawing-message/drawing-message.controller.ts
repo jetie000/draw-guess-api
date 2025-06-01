@@ -11,6 +11,7 @@ import { DrawingMessageService } from './drawing-message.service';
 import { Request } from 'express';
 import { isInt } from 'class-validator';
 import { DrawingMessageDto } from './dto/drawing-message.dto';
+import { OpenLetterDto } from './dto/open-letter.dto';
 
 @Controller('drawing-message')
 export class DrawingMessageController {
@@ -24,6 +25,15 @@ export class DrawingMessageController {
     return this.drawingMessageService.addDrawingMessage(
       drawingMessage,
       req.user
+    );
+  }
+
+  @Post('open-letter')
+  openLetter(@Body() openLetterDto: OpenLetterDto, @Req() req: Request) {
+    return this.drawingMessageService.openLetter(
+      openLetterDto.drawingId,
+      req.user,
+      openLetterDto.letterIndex
     );
   }
 

@@ -65,12 +65,14 @@ export const getConsecutiveDaysPlaying = (
   }>[]
 ) => {
   let consecutiveDaysPlaying = 1;
+
   for (let i = 1; i < games.length; i++) {
-    if (
-      new Date(games[i - 1].startDate).setHours(0, 0, 0, 0) -
-        new Date(games[i].startDate).setHours(0, 0, 0, 0) ===
-      MILLISECONDS_IN_A_DAY
-    ) {
+    const game1MS = new Date(games[i - 1].startDate).setHours(0, 0, 0, 0);
+    const game2MS = new Date(games[i].startDate).setHours(0, 0, 0, 0);
+    if (game1MS - game2MS === 0) {
+      continue;
+    }
+    if (game1MS - game2MS === MILLISECONDS_IN_A_DAY) {
       consecutiveDaysPlaying += 1;
     } else {
       break;
