@@ -6,7 +6,7 @@ export const randomCode = (length: number) =>
     .toString(36)
     .slice(2, length + 2);
 
-export const uniqueRandomFromArray = (arr: number[], n: number) => {
+export const uniqueRandomFromArray = (arr: number[], n = 1) => {
   const resultSet = new Set<number>();
   while (resultSet.size < n) {
     resultSet.add(arr[Math.floor(Math.random() * arr.length)]);

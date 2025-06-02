@@ -21,6 +21,15 @@ export class DrawingController {
     return this.drawingService.addDrawingPart(drawing, req.user);
   }
 
+  @Post('/change-word/:gameId')
+  changeDrawingWord(@Req() req: Request, @Param('gameId') gameId: string) {
+    const numberId = parseInt(gameId);
+    if (isInt(numberId) === false) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.drawingService.changeDrawingWord(numberId, req.user);
+  }
+
   @Get('game-current/:gameId')
   getDrawing(@Req() req: Request, @Param('gameId') gameId: string) {
     const numberId = parseInt(gameId);

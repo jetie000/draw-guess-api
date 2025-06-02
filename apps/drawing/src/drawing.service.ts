@@ -7,10 +7,19 @@ import { AddDrawingPartDto } from './dto/add-drawing-part.dto';
 import { Drawing, User } from '@prisma/client';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { uniqueRandomFromArray } from '@app/helpers/random';
+import {
+  breakSecondsNumber,
+  noGuessesSecondsNumber,
+} from '@app/typings/enums/game';
+import { SocketService } from '@app/socket/socket.service';
+import { Prices } from '@app/typings/enums/prices';
 
 @Injectable()
 export class DrawingService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly socketService: SocketService
+  ) {}
 
   async addDrawings(gameId: number) {
     const game = await this.prismaService.game.update({
@@ -31,27 +40,24 @@ export class DrawingService {
             },
           },
         },
-        wordTypes: true,
+        wordTypes: {
+          include: {
+            drawingWords: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!game) {
       throw new NotFoundException('Game not found');
     }
-    const gameWordTypes = await this.prismaService.drawingWordType.findMany({
-      where: {
-        id: { in: game.wordTypes.map((type) => type.id) },
-      },
-    });
-    const gameWords = await this.prismaService.drawingWord.findMany({
-      where: {
-        typeId: { in: gameWordTypes.map((type) => type.id) },
-      },
-      select: {
-        id: true,
-      },
-    });
     const words = uniqueRandomFromArray(
-      gameWords.map((word) => word.id),
+      game.wordTypes
+        .reduce((acc, wordType) => [...acc, ...wordType.drawingWords], [])
+        .map((word) => word.id),
       game.players.length * game.drawingsPerPlayer
     );
 
@@ -125,6 +131,95 @@ export class DrawingService {
         gamePlayerId: game.players[currentPlayerIndex].id,
       },
     });
+  }
+
+  async changeDrawingWord(gameId: number, user: User) {
+    if (user.money < Prices.ChangeWord) {
+      throw new BadRequestException('Not enough money');
+    }
+    const game = await this.prismaService.game.findFirst({
+      where: {
+        id: gameId,
+        players: {
+          some: {
+            userId: user.id,
+          },
+        },
+      },
+      include: {
+        drawings: { orderBy: { roundNumber: 'asc' } },
+        wordTypes: {
+          include: {
+            drawingWords: true,
+          },
+        },
+        players: true,
+      },
+    });
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+    if (
+      game.drawings[game.currentRound - 1]?.gamePlayerId !==
+      game.players.find((player) => player.userId === user.id)?.id
+    ) {
+      throw new BadRequestException('Not your turn');
+    }
+
+    const timePassedAfterGameStart = Date.now() - game.startDate.getTime();
+    const timePassedAfterRoundStart =
+      timePassedAfterGameStart -
+      (game.currentRound - 1) *
+        (game.roundDuration + breakSecondsNumber) *
+        1000;
+
+    if (timePassedAfterRoundStart > game.roundDuration * 1000) {
+      throw new BadRequestException('Game in break phase');
+    }
+
+    if (timePassedAfterRoundStart > noGuessesSecondsNumber * 1000) {
+      throw new BadRequestException(
+        `You cannot change word after ${noGuessesSecondsNumber} seconds of round passed`
+      );
+    }
+
+    const wordId = uniqueRandomFromArray(
+      game.wordTypes
+        .reduce((acc, wordType) => [...acc, ...wordType.drawingWords], [])
+        .filter(
+          (word) => word.id !== game.drawings[game.currentRound - 1].wordId
+        )
+        .map((word) => word.id)
+    )[0];
+    const [updatedUser, newDrawing] = await Promise.all([
+      this.prismaService.user.update({
+        data: {
+          money: { decrement: Prices.ChangeWord },
+        },
+        where: {
+          id: user.id,
+        },
+      }),
+      this.prismaService.drawing.update({
+        data: {
+          wordId,
+        },
+        where: {
+          id: game.drawings[game.currentRound - 1].id,
+        },
+        include: {
+          word: true,
+        },
+      }),
+    ]);
+    if (!newDrawing) {
+      throw new NotFoundException('Drawing not found');
+    }
+
+    return {
+      word: newDrawing.word,
+      updatedMoney: updatedUser.money,
+    };
   }
 
   async getCurrentGameDrawing(gameId: number, user: User) {

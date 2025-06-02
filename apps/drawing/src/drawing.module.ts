@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { DrawingWordModule } from './modules/drawing-word/drawing-word.module';
 import { DrawingWordTypeModule } from './modules/drawing-word-type/drawing-word-type.module';
 import { DrawingMessageModule } from './modules/drawing-message/drawing-message.module';
+import { SocketModule } from '@app/socket/socket.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DrawingMessageModule } from './modules/drawing-message/drawing-message.
     }),
     GuardModule,
     PrismaModule,
+    SocketModule,
     DrawingWordModule,
     DrawingWordTypeModule,
     DrawingMessageModule,

@@ -120,4 +120,12 @@ export class GameGateway
   ) {
     client.to(String(drawingData.room)).emit('drewPart', drawingData.drawing);
   }
+
+  @SubscribeMessage('changeDrawingWord')
+  async handleChangeDrawingWord(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('room') room: number
+  ) {
+    client.to(String(room)).emit('drawingWordChanged');
+  }
 }

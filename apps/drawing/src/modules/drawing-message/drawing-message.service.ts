@@ -83,7 +83,7 @@ export class DrawingMessageService {
     const pointsToAddGuesser = calculatePoints(roundPartPassed);
     const pointsToAddDrawer = calculatePoints(roundPartPassed, true);
 
-    let updatedPoints: number | null = null;
+    let updatedPoints: number = gamePlayer.points;
     if (
       drawing.word.word.toLowerCase() === drawingMessage.message.toLowerCase()
     ) {
@@ -221,7 +221,7 @@ export class DrawingMessageService {
     const pointsToAddGuesser = calculatePoints(roundPartPassed);
     const pointsToAddDrawer = calculatePoints(roundPartPassed, true);
 
-    let updatedPoints: number | null = null;
+    let updatedPoints: number = gamePlayer.points;
 
     const guessedLetters = getGuessedLettersFromMessages(
       [
