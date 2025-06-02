@@ -6,7 +6,7 @@ import {
 import { CreateGameDto } from './dto/create-game.dto';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { MaxGameDrawings } from '@app/helpers/game';
-import { Game, Prisma, User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { randomCode } from '@app/helpers/random';
 import { SocketService } from '@app/socket/socket.service';
 import { DrawingService } from 'apps/drawing/src/drawing.service';
@@ -243,59 +243,73 @@ export class GameService {
     if (game.startDate) {
       throw new BadRequestException('Game has already started');
     }
-    const gameStarted = await this.prismaService.game.update({
-      where: { id },
-      data: { startDate: new Date(), currentRound: 0 },
-    });
 
     await this.drawingService.addDrawings(game.id);
+
+    const gameStarted = await this.prismaService.game.update({
+      where: { id },
+      data: { startDate: new Date() },
+    });
 
     this.socketService.socket
       .to(String(game.id))
       .emit('gameStarted', gameStarted.startDate.toISOString());
 
-    this.sendTime(game);
+    this.sendTime({ ...game, startDate: gameStarted.startDate });
 
     return gameStarted;
   }
 
   sendTime(game: Prisma.GameGetPayload<{ include: { players: true } }>) {
-    let timePassed = 0;
+    const timeToEndGame =
+      (game.roundDuration + breakSecondsNumber) *
+      game.drawingsPerPlayer *
+      game.players.length;
 
-    const interval = setInterval(async () => {
-      timePassed += 1;
-      const timeToEndGame =
-        (game.roundDuration + breakSecondsNumber) *
-        game.drawingsPerPlayer *
-        game.players.length;
+    let nextSecond = 1;
 
-      if (timePassed === timeToEndGame) {
+    let timeToNextSecond =
+      game.startDate.getTime() + nextSecond * 1000 - Date.now();
+
+    const timePassedHandler = () => {
+      if (nextSecond === timeToEndGame) {
         this.endGame(game.id);
-        clearInterval(interval);
+        return;
       }
-
       if (
-        timePassed % (game.roundDuration + breakSecondsNumber) ===
+        nextSecond % (game.roundDuration + breakSecondsNumber) ===
         game.roundDuration
       ) {
         this.increaseRound(
-          game,
-          timePassed === timeToEndGame - breakSecondsNumber
+          game.id,
+          nextSecond === nextSecond - breakSecondsNumber
         );
       }
 
       this.socketService.socket
         .to(String(game.id))
-        .emit('timePassed', timePassed);
-    }, 1000);
+        .emit('timePassed', nextSecond);
+
+      nextSecond += 1;
+      timeToNextSecond =
+        game.startDate.getTime() + nextSecond * 1000 - Date.now();
+
+      setTimeout(() => {
+        timePassedHandler();
+      }, timeToNextSecond);
+    };
+
+    setTimeout(() => {
+      timePassedHandler();
+    }, timeToNextSecond);
   }
 
-  async increaseRound(game: Game, isLastRound: boolean) {
+  async increaseRound(gameId: number, isLastRound: boolean) {
     await this.prismaService.game.update({
-      where: { id: game.id },
+      where: { id: gameId },
       data: { currentRound: { increment: 1 } },
     });
-    this.sendUpdatedPlayers(game.id, isLastRound);
+    this.sendUpdatedPlayers(gameId, isLastRound);
   }
 
   async sendUpdatedPlayers(gameId: number, isLastRound: boolean) {
