@@ -212,9 +212,6 @@ export class DrawingService {
         },
       }),
     ]);
-    if (!newDrawing) {
-      throw new NotFoundException('Drawing not found');
-    }
 
     return {
       word: newDrawing.word,

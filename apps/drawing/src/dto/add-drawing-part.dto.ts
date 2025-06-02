@@ -1,4 +1,4 @@
-import { IsArray, IsHexColor, IsNumber } from 'class-validator';
+import { IsArray, IsHexColor, IsInt, IsNumber } from 'class-validator';
 
 export class AddDrawingPartDto {
   @IsArray()
@@ -13,9 +13,9 @@ export class AddDrawingPartDto {
   @IsNumber()
   lineWidth: number;
 
-  @IsNumber()
+  @IsInt()
   gameId: number;
 
-  @IsNumber()
+  @IsInt()
   drawingId: number;
 }

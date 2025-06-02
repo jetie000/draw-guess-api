@@ -8,7 +8,7 @@ export class DrawingWordTypeService {
 
   addWordType(wordType: WordTypeDto) {
     return this.prismaService.drawingWordType.create({
-      data: { type: wordType.type },
+      data: { type: wordType.type, price: wordType.price },
     });
   }
 
@@ -19,7 +19,7 @@ export class DrawingWordTypeService {
   updateWordType(id: number, wordType: WordTypeDto) {
     return this.prismaService.drawingWordType.update({
       where: { id },
-      data: { type: wordType.type },
+      data: { type: wordType.type, price: wordType.price },
     });
   }
 

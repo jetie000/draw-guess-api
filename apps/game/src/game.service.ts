@@ -38,6 +38,19 @@ export class GameService {
     if (gameParticipating) {
       throw new BadRequestException('You are already in another game');
     }
+
+    const wordTypes = await this.prismaService.drawingWordType.findMany({
+      where: { id: { in: createGameDto.wordTypeIds } },
+    });
+    const wordTypesCost = wordTypes.reduce(
+      (acc, wordType) => acc + wordType.price,
+      0
+    );
+
+    if (wordTypesCost > user.money) {
+      throw new BadRequestException('Not enough money');
+    }
+
     let code = randomCode(6);
 
     while (true) {
@@ -70,7 +83,16 @@ export class GameService {
       },
     });
 
-    return game.id;
+    const userUpdated = await this.prismaService.user.update({
+      where: { id: user.id },
+      data: {
+        money: {
+          decrement: wordTypesCost,
+        },
+      },
+    });
+
+    return { gameId: game.id, updatedMoney: userUpdated.money };
   }
 
   async joinGame(code: string, user: User) {
@@ -200,7 +222,7 @@ export class GameService {
   async deleteLeaveGame(id: number, user: User) {
     const game = await this.prismaService.game.findUnique({
       where: { id },
-      include: { players: true },
+      include: { players: true, wordTypes: true },
     });
     if (!game) {
       throw new NotFoundException('Game not found');
@@ -221,9 +243,25 @@ export class GameService {
         },
       });
     }
-    return this.prismaService.game.delete({
-      where: { id },
-    });
+    const wordTypesCost = game.wordTypes.reduce(
+      (acc, wordType) => acc + wordType.price,
+      0
+    );
+    return {
+      game: await this.prismaService.game.delete({
+        where: { id },
+      }),
+      updatedMoney: (
+        await this.prismaService.user.update({
+          where: { id: user.id },
+          data: {
+            money: {
+              increment: wordTypesCost,
+            },
+          },
+        })
+      ).money,
+    };
   }
 
   async startGame(id: number, user: User) {

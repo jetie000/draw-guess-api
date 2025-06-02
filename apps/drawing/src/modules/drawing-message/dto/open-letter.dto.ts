@@ -1,9 +1,9 @@
-import { IsNumber } from 'class-validator';
+import { IsInt } from 'class-validator';
 
 export class OpenLetterDto {
-  @IsNumber()
+  @IsInt()
   letterIndex: number;
 
-  @IsNumber()
+  @IsInt()
   drawingId: number;
 }

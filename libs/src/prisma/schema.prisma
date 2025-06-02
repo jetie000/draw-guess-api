@@ -111,6 +111,7 @@ model DrawingWord {
 model DrawingWordType {
   id           Int           @id @default(autoincrement())
   type         String
+  price        Int           @default(0)
   drawingWords DrawingWord[]
   games        Game[]
 }
