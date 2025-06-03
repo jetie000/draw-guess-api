@@ -2,15 +2,7 @@ FROM node:23-alpine AS development
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-
-RUN npm install
-
-COPY . .
-
-RUN npx prisma generate
-
-RUN npm run build account
+COPY dist ./dist
 
 FROM node:23-alpine AS production
 
@@ -21,7 +13,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install --production
+RUN npm install --production --omit=dev
 
 COPY libs/src/prisma ./libs/src/prisma
 
