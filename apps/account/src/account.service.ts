@@ -31,6 +31,7 @@ import {
   PublicUserWithWins,
   PublicUserWithWordsGuessed,
 } from '@app/typings/interfaces/account';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AccountService {
@@ -100,10 +101,7 @@ export class AccountService {
       email: googleInfo.email,
       type: AccountType.GOOGLE,
     });
-    const hashedPassword = await hash(
-      googleInfo.sub,
-      this.configService.get('HASH_SALT')
-    );
+    const hashedPassword = await hash(googleInfo.sub, this.configService.get('HASH_SALT'));
 
     const userTofind = await this.prismaService.user.findFirst({
       where: {
@@ -164,10 +162,7 @@ export class AccountService {
       throw new ConflictException('User with this email already exists');
     }
 
-    const hashPassword = await hash(
-      signUpDto.password,
-      this.configService.get('HASH_SALT')
-    );
+    const hashPassword = await hash(signUpDto.password, this.configService.get('HASH_SALT'));
     const tokens = await this.generateTokens({
       username: signUpDto.username,
       email: signUpDto.email,
@@ -242,10 +237,7 @@ export class AccountService {
         id: user.id,
       },
       data: {
-        password: await hash(
-          resetPasswordDto.password,
-          this.configService.get('HASH_SALT')
-        ),
+        password: await hash(resetPasswordDto.password, this.configService.get('HASH_SALT')),
         resetCode: null,
       },
     });
@@ -255,12 +247,9 @@ export class AccountService {
     if (!refreshToken) {
       throw new ForbiddenException();
     }
-    const payload: JwtPayload = await this.jwtService.verifyAsync(
-      refreshToken,
-      {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-      }
-    );
+    const payload: JwtPayload = await this.jwtService.verifyAsync(refreshToken, {
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
+    });
     const user = await this.prismaService.user.findFirst({
       where: {
         refreshToken,
@@ -343,10 +332,7 @@ export class AccountService {
       },
     });
     const winners = games.reduce((acc, game) => {
-      return [
-        ...acc,
-        ...game.players.filter((p) => p.points === game.players[0].points),
-      ];
+      return [...acc, ...game.players.filter((p) => p.points === game.players[0].points)];
     }, []);
     const userWinners: Record<number, PublicUserWithWins> = winners.reduce(
       (acc, player) => ({
@@ -443,17 +429,28 @@ export class AccountService {
     return tokens;
   }
 
-  async patchUserAdmin(id: number, patchUserDto: UpdateUserAdminDto) {
-    const user = await this.prismaService.user.findUnique({
+  async patchUserAdmin(id: number, patchUserDto: UpdateUserAdminDto, user: User) {
+    const userPatching = await this.prismaService.user.findUnique({
       where: { id },
     });
-    if (!user) {
+    if (!userPatching) {
       throw new NotFoundException('User not found');
+    }
+    if (userPatching.role === UserRole.MODERATOR) {
+      if (user.role !== UserRole.MODERATOR) {
+        throw new ForbiddenException('You cannot change moderator');
+      }
+      if (Number(patchUserDto.role) !== UserRole.MODERATOR) {
+        throw new ForbiddenException('You cannot change moderator role');
+      }
+      if (!Boolean(patchUserDto.access)) {
+        throw new ForbiddenException('You cannot block moderator');
+      }
     }
     const tokens = await this.generateTokens({
       username: patchUserDto.username,
-      email: user.email,
-      type: user.type,
+      email: userPatching.email,
+      type: userPatching.type,
     });
     const typedDto = {
       username: patchUserDto.username,
@@ -461,13 +458,13 @@ export class AccountService {
       access: patchUserDto.access && Boolean(patchUserDto.access),
       password:
         patchUserDto.password &&
-        (await hash(
-          patchUserDto.password,
-          this.configService.get('HASH_SALT')
-        )),
+        (await hash(patchUserDto.password, this.configService.get('HASH_SALT'))),
       refreshToken: tokens.refreshToken,
     };
-    if (![0, 1].includes(typedDto.role)) {
+    if (
+      ![UserRole.USER, UserRole.ADMIN].includes(typedDto.role) &&
+      userPatching.role !== UserRole.MODERATOR
+    ) {
       throw new BadRequestException('Wrong role');
     }
     return this.prismaService.user.update({

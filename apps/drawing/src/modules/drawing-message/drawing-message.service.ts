@@ -3,10 +3,7 @@ import { PrismaService } from '@app/prisma/prisma.service';
 import { DrawingMessageDto } from './dto/drawing-message.dto';
 import { User } from '@prisma/client';
 import { GamePlayerService } from 'apps/game/src/modules/game-player/game-player.service';
-import {
-  breakSecondsNumber,
-  noGuessesSecondsNumber,
-} from '@app/typings/enums/game';
+import { breakSecondsNumber, noGuessesSecondsNumber } from '@app/typings/enums/game';
 import { calculatePoints } from '@app/helpers/game';
 import { getGuessedLettersFromMessages } from '@app/helpers/messages';
 import { Prices } from '@app/typings/enums/prices';
@@ -24,9 +21,7 @@ export class DrawingMessageService {
       include: { game: { include: { players: true } }, word: true },
     });
 
-    const gamePlayer = drawing.game.players.find(
-      (player) => player.userId === user.id
-    );
+    const gamePlayer = drawing.game.players.find((player) => player.userId === user.id);
 
     if (gamePlayer.id === drawing.gamePlayerId) {
       throw new BadRequestException('You cannot guess your own drawing');
@@ -41,13 +36,10 @@ export class DrawingMessageService {
       throw new BadRequestException('Game has ended');
     }
 
-    const timePassedAfterGameStart =
-      Date.now() - drawing.game.startDate.getTime();
+    const timePassedAfterGameStart = Date.now() - drawing.game.startDate.getTime();
     const timePassedAfterRoundStart =
       timePassedAfterGameStart -
-      (drawing.game.currentRound - 1) *
-        (drawing.game.roundDuration + breakSecondsNumber) *
-        1000;
+      (drawing.game.currentRound - 1) * (drawing.game.roundDuration + breakSecondsNumber) * 1000;
 
     if (timePassedAfterRoundStart > drawing.game.roundDuration * 1000) {
       throw new BadRequestException('Game in break phase');
@@ -59,8 +51,7 @@ export class DrawingMessageService {
       );
     }
 
-    const roundPartPassed =
-      timePassedAfterRoundStart / (drawing.game.roundDuration * 1000);
+    const roundPartPassed = timePassedAfterRoundStart / (drawing.game.roundDuration * 1000);
 
     const messages = await this.prismaService.drawingMessage.findMany({
       where: {
@@ -70,10 +61,7 @@ export class DrawingMessageService {
     });
 
     if (
-      messages.find(
-        (message) =>
-          message.message.toLowerCase() === drawing.word.word.toLowerCase()
-      )
+      messages.find((message) => message.message.toLowerCase() === drawing.word.word.toLowerCase())
     ) {
       throw new BadRequestException('You have already guessed this word');
     }
@@ -84,16 +72,11 @@ export class DrawingMessageService {
     const pointsToAddDrawer = calculatePoints(roundPartPassed, true);
 
     let updatedPoints: number = gamePlayer.points;
-    if (
-      drawing.word.word.toLowerCase() === drawingMessage.message.toLowerCase()
-    ) {
+    if (drawing.word.word.toLowerCase() === drawingMessage.message.toLowerCase()) {
       isGuessed = true;
       const [guesser] = await Promise.all([
         this.gamePlayerService.addPoints(gamePlayer.id, pointsToAddGuesser),
-        this.gamePlayerService.addPoints(
-          drawing.gamePlayerId,
-          pointsToAddDrawer
-        ),
+        this.gamePlayerService.addPoints(drawing.gamePlayerId, pointsToAddDrawer),
       ]);
       updatedPoints = guesser.points;
     }
@@ -103,10 +86,7 @@ export class DrawingMessageService {
       updatedPoints: updatedPoints,
       guessedLetters: drawing.game.isSimplified
         ? getGuessedLettersFromMessages(
-            [
-              ...messages.map((message) => message.message),
-              drawingMessage.message,
-            ],
+            [...messages.map((message) => message.message), drawingMessage.message],
             drawing.word.word
           )
         : null,
@@ -135,9 +115,7 @@ export class DrawingMessageService {
       include: { game: { include: { players: true } }, word: true },
     });
 
-    const gamePlayer = drawing.game.players.find(
-      (player) => player.userId === user.id
-    );
+    const gamePlayer = drawing.game.players.find((player) => player.userId === user.id);
 
     if (gamePlayer.id === drawing.gamePlayerId) {
       throw new BadRequestException('You open letter of your own drawing');
@@ -155,16 +133,12 @@ export class DrawingMessageService {
       throw new BadRequestException('Invalid letter index');
     }
 
-    const timePassedAfterGameStart =
-      Date.now() - drawing.game.startDate.getTime();
+    const timePassedAfterGameStart = Date.now() - drawing.game.startDate.getTime();
     const timePassedAfterRoundStart =
       timePassedAfterGameStart -
-      (drawing.game.currentRound - 1) *
-        (drawing.game.roundDuration + breakSecondsNumber) *
-        1000;
+      (drawing.game.currentRound - 1) * (drawing.game.roundDuration + breakSecondsNumber) * 1000;
 
-    const roundPartPassed =
-      timePassedAfterRoundStart / (drawing.game.roundDuration * 1000);
+    const roundPartPassed = timePassedAfterRoundStart / (drawing.game.roundDuration * 1000);
 
     if (timePassedAfterRoundStart > drawing.game.roundDuration * 1000) {
       throw new BadRequestException('Game in break phase');
@@ -184,10 +158,7 @@ export class DrawingMessageService {
     });
 
     if (
-      messages.find(
-        (message) =>
-          message.message.toLowerCase() === drawing.word.word.toLowerCase()
-      )
+      messages.find((message) => message.message.toLowerCase() === drawing.word.word.toLowerCase())
     ) {
       throw new BadRequestException('You have already guessed this word');
     }
@@ -211,9 +182,7 @@ export class DrawingMessageService {
       data: { money: { decrement: Prices.OpenLetter } },
     });
 
-    const messageWithOpenedLetter: string[] = Array(
-      drawing.word.word.length
-    ).fill('_');
+    const messageWithOpenedLetter: string[] = Array(drawing.word.word.length).fill('_');
     messageWithOpenedLetter[letterIndex] = drawing.word.word[letterIndex];
 
     let isGuessed = false;
@@ -224,10 +193,7 @@ export class DrawingMessageService {
     let updatedPoints: number = gamePlayer.points;
 
     const guessedLetters = getGuessedLettersFromMessages(
-      [
-        ...messages.map((message) => message.message),
-        messageWithOpenedLetter.join(''),
-      ],
+      [...messages.map((message) => message.message), messageWithOpenedLetter.join('')],
       drawing.word.word
     );
 
@@ -235,10 +201,7 @@ export class DrawingMessageService {
       isGuessed = true;
       const [guesser] = await Promise.all([
         this.gamePlayerService.addPoints(gamePlayer.id, pointsToAddGuesser),
-        this.gamePlayerService.addPoints(
-          drawing.gamePlayerId,
-          pointsToAddDrawer
-        ),
+        this.gamePlayerService.addPoints(drawing.gamePlayerId, pointsToAddDrawer),
       ]);
       updatedPoints = guesser.points;
     }
@@ -272,9 +235,7 @@ export class DrawingMessageService {
       throw new BadRequestException('Drawing not found');
     }
 
-    const gamePlayer = drawing.game.players.find(
-      (player) => player.userId === user.id
-    );
+    const gamePlayer = drawing.game.players.find((player) => player.userId === user.id);
     if (!gamePlayer) {
       throw new BadRequestException('You are not in a game');
     }
@@ -286,8 +247,7 @@ export class DrawingMessageService {
     return {
       isGuessed:
         messages.findIndex(
-          (message) =>
-            message.message.toLowerCase() === drawing.word.word.toLowerCase()
+          (message) => message.message.toLowerCase() === drawing.word.word.toLowerCase()
         ) !== -1,
       guessedLetters: drawing.game.isSimplified
         ? getGuessedLettersFromMessages(

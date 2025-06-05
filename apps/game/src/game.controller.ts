@@ -31,10 +31,7 @@ export class GameController {
   }
 
   @Get('participating')
-  getParticipatingGames(
-    @Req() req: Request,
-    @Query('isEnded') isEnded: string = 'false'
-  ) {
+  getParticipatingGames(@Req() req: Request, @Query('isEnded') isEnded: string = 'false') {
     return this.gameService.getParticipatingGames(req.user, isEnded === 'true');
   }
 

@@ -14,7 +14,7 @@ import { isInt } from 'class-validator';
 import { UserRole } from '@app/typings/enums/account';
 import { Roles } from '@app/auth/roles.decorator';
 
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.MODERATOR)
 @Controller('drawing-word')
 export class DrawingWordController {
   constructor(private readonly drawingWordService: DrawingWordService) {}

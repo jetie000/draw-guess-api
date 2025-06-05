@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsString,
-  IsStrongPassword,
-  IsUppercase,
-  Length,
-} from 'class-validator';
+import { IsEmail, IsString, IsStrongPassword, IsUppercase, Length } from 'class-validator';
 
 export class ResetPasswordDto {
   @IsEmail()

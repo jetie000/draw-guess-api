@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateGameDto } from './dto/create-game.dto';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { MaxGameDrawings } from '@app/helpers/game';
@@ -12,6 +8,7 @@ import { SocketService } from '@app/socket/socket.service';
 import { DrawingService } from 'apps/drawing/src/drawing.service';
 import { breakSecondsNumber } from '@app/typings/enums/game';
 import { AchievementsService } from 'apps/account/src/modules/achievements/achievements.service';
+import { getLevelAndProgressByExp, getMoneyAmountForLevelUp } from '@app/helpers/account';
 
 @Injectable()
 export class GameService {
@@ -23,13 +20,8 @@ export class GameService {
   ) {}
 
   async createGame(createGameDto: CreateGameDto, user: User) {
-    if (
-      createGameDto.maxPlayers * createGameDto.drawingsPerPlayer >
-      MaxGameDrawings
-    ) {
-      throw new BadRequestException(
-        'Too many drawings for that amount of players'
-      );
+    if (createGameDto.maxPlayers * createGameDto.drawingsPerPlayer > MaxGameDrawings) {
+      throw new BadRequestException('Too many drawings for that amount of players');
     }
 
     const gameParticipating = await this.prismaService.game.findFirst({
@@ -42,10 +34,7 @@ export class GameService {
     const wordTypes = await this.prismaService.drawingWordType.findMany({
       where: { id: { in: createGameDto.wordTypeIds } },
     });
-    const wordTypesCost = wordTypes.reduce(
-      (acc, wordType) => acc + wordType.price,
-      0
-    );
+    const wordTypesCost = wordTypes.reduce((acc, wordType) => acc + wordType.price, 0);
 
     if (wordTypesCost > user.money) {
       throw new BadRequestException('Not enough money');
@@ -243,10 +232,7 @@ export class GameService {
         },
       });
     }
-    const wordTypesCost = game.wordTypes.reduce(
-      (acc, wordType) => acc + wordType.price,
-      0
-    );
+    const wordTypesCost = game.wordTypes.reduce((acc, wordType) => acc + wordType.price, 0);
     return {
       game: await this.prismaService.game.delete({
         where: { id },
@@ -300,37 +286,25 @@ export class GameService {
 
   sendTime(game: Prisma.GameGetPayload<{ include: { players: true } }>) {
     const timeToEndGame =
-      (game.roundDuration + breakSecondsNumber) *
-      game.drawingsPerPlayer *
-      game.players.length;
+      (game.roundDuration + breakSecondsNumber) * game.drawingsPerPlayer * game.players.length;
 
     let nextSecond = 1;
 
-    let timeToNextSecond =
-      game.startDate.getTime() + nextSecond * 1000 - Date.now();
+    let timeToNextSecond = game.startDate.getTime() + nextSecond * 1000 - Date.now();
 
     const timePassedHandler = () => {
       if (nextSecond === timeToEndGame) {
         this.endGame(game.id);
         return;
       }
-      if (
-        nextSecond % (game.roundDuration + breakSecondsNumber) ===
-        game.roundDuration
-      ) {
-        this.increaseRound(
-          game.id,
-          nextSecond === nextSecond - breakSecondsNumber
-        );
+      if (nextSecond % (game.roundDuration + breakSecondsNumber) === game.roundDuration) {
+        this.increaseRound(game.id, nextSecond === timeToEndGame - breakSecondsNumber);
       }
 
-      this.socketService.socket
-        .to(String(game.id))
-        .emit('timePassed', nextSecond);
+      this.socketService.socket.to(String(game.id)).emit('timePassed', nextSecond);
 
       nextSecond += 1;
-      timeToNextSecond =
-        game.startDate.getTime() + nextSecond * 1000 - Date.now();
+      timeToNextSecond = game.startDate.getTime() + nextSecond * 1000 - Date.now();
 
       setTimeout(() => {
         timePassedHandler();
@@ -373,13 +347,22 @@ export class GameService {
       await this.prismaService.$transaction(async (prisma) => {
         game.players = await Promise.all(
           game.players.map(async (player) => {
-            this.achievementsService.recalculateAchievements(
-              player.user,
-              gameId
-            );
+            this.achievementsService.recalculateAchievements(player.user, gameId);
+
+            const currentLevel = getLevelAndProgressByExp(
+              player.user.experience + player.points
+            ).level;
+            const prevLevel = getLevelAndProgressByExp(player.user.experience).level;
+            let moneyEarned = 0;
+            if (currentLevel !== prevLevel) {
+              moneyEarned = getMoneyAmountForLevelUp(currentLevel);
+            }
             await prisma.user.update({
               where: { id: player.userId },
-              data: { experience: { increment: player.points } },
+              data: {
+                experience: { increment: player.points },
+                money: { increment: moneyEarned },
+              },
             });
 
             return {
@@ -393,9 +376,7 @@ export class GameService {
         );
       });
     }
-    this.socketService.socket
-      .to(String(gameId))
-      .emit('updatedPlayers', game.players);
+    this.socketService.socket.to(String(gameId)).emit('updatedPlayers', game.players);
   }
 
   async endGame(gameId: number) {

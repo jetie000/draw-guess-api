@@ -23,9 +23,7 @@ const publicRoom = 'public-room';
     origin: new ConfigService().get('FRONTEND_URL'),
   },
 })
-export class GameGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly socketService: SocketService) {}
 
   @WebSocketServer()
@@ -63,10 +61,7 @@ export class GameGateway
   }
 
   @SubscribeMessage('deleteGamePublic')
-  async handleCreateGame(
-    @ConnectedSocket() client: Socket,
-    @MessageBody('room') room: number
-  ) {
+  async handleCreateGame(@ConnectedSocket() client: Socket, @MessageBody('room') room: number) {
     client.to(publicRoom).emit('deletedGamePublic', room);
   }
 
@@ -86,9 +81,7 @@ export class GameGateway
   ) {
     if (!info.player) return;
     client.join(String(info.room));
-    this.logger.log(
-      `Client with id: ${info.player.user.id} joined room: ${info.room}`
-    );
+    this.logger.log(`Client with id: ${info.player.user.id} joined room: ${info.room}`);
     client.to(String(info.room)).emit('joinedGame', info.player);
   }
 
@@ -104,10 +97,7 @@ export class GameGateway
   }
 
   @SubscribeMessage('deleteGame')
-  async handleDeleteGame(
-    @ConnectedSocket() client: Socket,
-    @MessageBody('room') room: number
-  ) {
+  async handleDeleteGame(@ConnectedSocket() client: Socket, @MessageBody('room') room: number) {
     this.logger.log(`Room deleted: ${room}`);
     client.to(String(room)).emit('deletedGame');
     client.leave(String(room));

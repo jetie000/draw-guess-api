@@ -9,8 +9,6 @@ export const MaxGameDrawings = 12;
 
 export const calculatePoints = (roundPassedPart: number, isDrawer = false) => {
   return isDrawer
-    ? defaultPointsGuessedForDrawer +
-        Math.round(roundPassedPart * extraPointsGuessedForDrawer)
-    : defaultPointsForGuess +
-        Math.round(roundPassedPart * extraMaxPointsForGuess);
+    ? defaultPointsGuessedForDrawer + Math.round(roundPassedPart * extraPointsGuessedForDrawer)
+    : defaultPointsForGuess + Math.round(roundPassedPart * extraMaxPointsForGuess);
 };

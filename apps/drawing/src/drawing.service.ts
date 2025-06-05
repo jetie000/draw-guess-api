@@ -1,16 +1,9 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AddDrawingPartDto } from './dto/add-drawing-part.dto';
 import { Drawing, User } from '@prisma/client';
 import { PrismaService } from '@app/prisma/prisma.service';
 import { uniqueRandomFromArray } from '@app/helpers/random';
-import {
-  breakSecondsNumber,
-  noGuessesSecondsNumber,
-} from '@app/typings/enums/game';
+import { breakSecondsNumber, noGuessesSecondsNumber } from '@app/typings/enums/game';
 import { SocketService } from '@app/socket/socket.service';
 import { Prices } from '@app/typings/enums/prices';
 
@@ -169,9 +162,7 @@ export class DrawingService {
     const timePassedAfterGameStart = Date.now() - game.startDate.getTime();
     const timePassedAfterRoundStart =
       timePassedAfterGameStart -
-      (game.currentRound - 1) *
-        (game.roundDuration + breakSecondsNumber) *
-        1000;
+      (game.currentRound - 1) * (game.roundDuration + breakSecondsNumber) * 1000;
 
     if (timePassedAfterRoundStart > game.roundDuration * 1000) {
       throw new BadRequestException('Game in break phase');
@@ -186,9 +177,7 @@ export class DrawingService {
     const wordId = uniqueRandomFromArray(
       game.wordTypes
         .reduce((acc, wordType) => [...acc, ...wordType.drawingWords], [])
-        .filter(
-          (word) => word.id !== game.drawings[game.currentRound - 1].wordId
-        )
+        .filter((word) => word.id !== game.drawings[game.currentRound - 1].wordId)
         .map((word) => word.id)
     )[0];
     const [updatedUser, newDrawing] = await Promise.all([
@@ -257,17 +246,12 @@ export class DrawingService {
         ? game.players.length - 1
         : (game.currentRound % game.players.length) - 1;
 
-    const fullDrawing = game.drawings.find(
-      (drawing) => drawing.roundNumber === game.currentRound
-    );
+    const fullDrawing = game.drawings.find((drawing) => drawing.roundNumber === game.currentRound);
     return fullDrawing
       ? ({
           ...fullDrawing,
           wordId: undefined,
-          word:
-            user.id === game.players[currentPlayerIndex].user.id
-              ? fullDrawing.word
-              : undefined,
+          word: user.id === game.players[currentPlayerIndex].user.id ? fullDrawing.word : undefined,
         } as Drawing)
       : null;
   }
