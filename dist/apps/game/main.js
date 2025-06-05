@@ -23,12 +23,12 @@ exports.GameModule = void 0;
 const common_1 = __webpack_require__(3);
 const game_controller_1 = __webpack_require__(4);
 const game_service_1 = __webpack_require__(5);
-const config_1 = __webpack_require__(21);
-const _app_1 = __webpack_require__(22);
+const config_1 = __webpack_require__(22);
+const _app_1 = __webpack_require__(23);
 const core_1 = __webpack_require__(1);
-const auth_guard_1 = __webpack_require__(24);
-const guard_module_1 = __webpack_require__(27);
-const game_events_module_1 = __webpack_require__(31);
+const auth_guard_1 = __webpack_require__(25);
+const guard_module_1 = __webpack_require__(28);
+const game_events_module_1 = __webpack_require__(32);
 const drawing_service_1 = __webpack_require__(12);
 const achievements_service_1 = __webpack_require__(14);
 let GameModule = class GameModule {
@@ -84,9 +84,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GameController = void 0;
 const common_1 = __webpack_require__(3);
 const game_service_1 = __webpack_require__(5);
-const create_game_dto_1 = __webpack_require__(18);
-const express_1 = __webpack_require__(20);
-const class_validator_1 = __webpack_require__(19);
+const create_game_dto_1 = __webpack_require__(19);
+const express_1 = __webpack_require__(21);
+const class_validator_1 = __webpack_require__(20);
 let GameController = class GameController {
     constructor(gameService) {
         this.gameService = gameService;
@@ -213,6 +213,7 @@ const socket_service_1 = __webpack_require__(11);
 const drawing_service_1 = __webpack_require__(12);
 const game_2 = __webpack_require__(9);
 const achievements_service_1 = __webpack_require__(14);
+const account_1 = __webpack_require__(18);
 let GameService = class GameService {
     constructor(prismaService, socketService, drawingService, achievementsService) {
         this.prismaService = prismaService;
@@ -221,8 +222,7 @@ let GameService = class GameService {
         this.achievementsService = achievementsService;
     }
     async createGame(createGameDto, user) {
-        if (createGameDto.maxPlayers * createGameDto.drawingsPerPlayer >
-            game_1.MaxGameDrawings) {
+        if (createGameDto.maxPlayers * createGameDto.drawingsPerPlayer > game_1.MaxGameDrawings) {
             throw new common_1.BadRequestException('Too many drawings for that amount of players');
         }
         const gameParticipating = await this.prismaService.game.findFirst({
@@ -459,9 +459,7 @@ let GameService = class GameService {
         return gameStarted;
     }
     sendTime(game) {
-        const timeToEndGame = (game.roundDuration + game_2.breakSecondsNumber) *
-            game.drawingsPerPlayer *
-            game.players.length;
+        const timeToEndGame = (game.roundDuration + game_2.breakSecondsNumber) * game.drawingsPerPlayer * game.players.length;
         let nextSecond = 1;
         let timeToNextSecond = game.startDate.getTime() + nextSecond * 1000 - Date.now();
         const timePassedHandler = () => {
@@ -469,16 +467,12 @@ let GameService = class GameService {
                 this.endGame(game.id);
                 return;
             }
-            if (nextSecond % (game.roundDuration + game_2.breakSecondsNumber) ===
-                game.roundDuration) {
-                this.increaseRound(game.id, nextSecond === nextSecond - game_2.breakSecondsNumber);
+            if (nextSecond % (game.roundDuration + game_2.breakSecondsNumber) === game.roundDuration) {
+                this.increaseRound(game.id, nextSecond === timeToEndGame - game_2.breakSecondsNumber);
             }
-            this.socketService.socket
-                .to(String(game.id))
-                .emit('timePassed', nextSecond);
+            this.socketService.socket.to(String(game.id)).emit('timePassed', nextSecond);
             nextSecond += 1;
-            timeToNextSecond =
-                game.startDate.getTime() + nextSecond * 1000 - Date.now();
+            timeToNextSecond = game.startDate.getTime() + nextSecond * 1000 - Date.now();
             setTimeout(() => {
                 timePassedHandler();
             }, timeToNextSecond);
@@ -517,9 +511,18 @@ let GameService = class GameService {
             await this.prismaService.$transaction(async (prisma) => {
                 game.players = await Promise.all(game.players.map(async (player) => {
                     this.achievementsService.recalculateAchievements(player.user, gameId);
+                    const currentLevel = (0, account_1.getLevelAndProgressByExp)(player.user.experience + player.points).level;
+                    const prevLevel = (0, account_1.getLevelAndProgressByExp)(player.user.experience).level;
+                    let moneyEarned = 0;
+                    if (currentLevel !== prevLevel) {
+                        moneyEarned = (0, account_1.getMoneyAmountForLevelUp)(currentLevel);
+                    }
                     await prisma.user.update({
                         where: { id: player.userId },
-                        data: { experience: { increment: player.points } },
+                        data: {
+                            experience: { increment: player.points },
+                            money: { increment: moneyEarned },
+                        },
                     });
                     return {
                         ...player,
@@ -531,9 +534,7 @@ let GameService = class GameService {
                 }));
             });
         }
-        this.socketService.socket
-            .to(String(gameId))
-            .emit('updatedPlayers', game.players);
+        this.socketService.socket.to(String(gameId)).emit('updatedPlayers', game.players);
     }
     async endGame(gameId) {
         const endDate = new Date();
@@ -607,10 +608,8 @@ const game_1 = __webpack_require__(9);
 exports.MaxGameDrawings = 12;
 const calculatePoints = (roundPassedPart, isDrawer = false) => {
     return isDrawer
-        ? game_1.defaultPointsGuessedForDrawer +
-            Math.round(roundPassedPart * game_1.extraPointsGuessedForDrawer)
-        : game_1.defaultPointsForGuess +
-            Math.round(roundPassedPart * game_1.extraMaxPointsForGuess);
+        ? game_1.defaultPointsGuessedForDrawer + Math.round(roundPassedPart * game_1.extraPointsGuessedForDrawer)
+        : game_1.defaultPointsForGuess + Math.round(roundPassedPart * game_1.extraMaxPointsForGuess);
 };
 exports.calculatePoints = calculatePoints;
 
@@ -837,9 +836,7 @@ let DrawingService = class DrawingService {
         }
         const timePassedAfterGameStart = Date.now() - game.startDate.getTime();
         const timePassedAfterRoundStart = timePassedAfterGameStart -
-            (game.currentRound - 1) *
-                (game.roundDuration + game_1.breakSecondsNumber) *
-                1000;
+            (game.currentRound - 1) * (game.roundDuration + game_1.breakSecondsNumber) * 1000;
         if (timePassedAfterRoundStart > game.roundDuration * 1000) {
             throw new common_1.BadRequestException('Game in break phase');
         }
@@ -916,9 +913,7 @@ let DrawingService = class DrawingService {
             ? {
                 ...fullDrawing,
                 wordId: undefined,
-                word: user.id === game.players[currentPlayerIndex].user.id
-                    ? fullDrawing.word
-                    : undefined,
+                word: user.id === game.players[currentPlayerIndex].user.id ? fullDrawing.word : undefined,
             }
             : null;
     }
@@ -1136,9 +1131,7 @@ const calculateAchievementLevel = (amount, levelAmounts) => {
 exports.calculateAchievementLevel = calculateAchievementLevel;
 const getWonGamesByType = (user, games) => {
     const gamesWon = games.filter((game) => {
-        const playersSorted = game.players
-            .slice()
-            .sort((p1, p2) => p2.points - p1.points);
+        const playersSorted = game.players.slice().sort((p1, p2) => p2.points - p1.points);
         const yourPlayer = playersSorted.find((p) => p.userId === user.id);
         if (!yourPlayer || yourPlayer.points === 0) {
             return false;
@@ -1182,7 +1175,8 @@ exports.getConsecutiveDaysPlaying = getConsecutiveDaysPlaying;
 const getMyMessagesStats = (drawingMessages) => {
     return {
         [achievements_1.AchievementsTypeIds.WordsGuessed]: drawingMessages.length,
-        [achievements_1.AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter((message) => message.isFirst).length,
+        [achievements_1.AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter((message) => message.isFirst)
+            .length,
         [achievements_1.AchievementsTypeIds.QuickQuesses]: drawingMessages.filter((message) => message.secondsPassedAfterRound <= achievements_1.QuickGuessSeconds).length,
     };
 };
@@ -1225,6 +1219,38 @@ exports.moneyForAchievementAmountByLevel = [100, 250, 500];
 
 /***/ }),
 /* 18 */
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getLevelAndProgressByExp = exports.pointsIncreasingEveryLevel = exports.pointsForFirstLevel = exports.getMoneyAmountForLevelUp = void 0;
+const getMoneyAmountForLevelUp = (level) => {
+    return 10 + 5 * level;
+};
+exports.getMoneyAmountForLevelUp = getMoneyAmountForLevelUp;
+exports.pointsForFirstLevel = 100;
+exports.pointsIncreasingEveryLevel = 50;
+const getLevelAndProgressByExp = (experience) => {
+    let level = 1;
+    let remainingExp = experience;
+    let pointsToSubstract = exports.pointsForFirstLevel;
+    while (remainingExp >= pointsToSubstract) {
+        remainingExp -= pointsToSubstract;
+        level++;
+        pointsToSubstract += exports.pointsIncreasingEveryLevel;
+    }
+    return {
+        level,
+        progress: Math.floor((remainingExp / pointsToSubstract) * 100),
+        pointsEarnedAtLevel: remainingExp,
+        pointsForNextLevel: pointsToSubstract,
+    };
+};
+exports.getLevelAndProgressByExp = getLevelAndProgressByExp;
+
+
+/***/ }),
+/* 19 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1239,7 +1265,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CreateGameDto = void 0;
-const class_validator_1 = __webpack_require__(19);
+const class_validator_1 = __webpack_require__(20);
 class CreateGameDto {
 }
 exports.CreateGameDto = CreateGameDto;
@@ -1276,25 +1302,25 @@ __decorate([
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ ((module) => {
 
 module.exports = require("class-validator");
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ ((module) => {
 
 module.exports = require("express");
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ ((module) => {
 
 module.exports = require("@nestjs/config");
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1313,11 +1339,11 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__webpack_require__(23), exports);
+__exportStar(__webpack_require__(24), exports);
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1344,7 +1370,7 @@ exports.PrismaModule = PrismaModule = __decorate([
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1361,10 +1387,10 @@ var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AuthGuard = void 0;
 const common_1 = __webpack_require__(3);
-const config_1 = __webpack_require__(21);
-const jwt_1 = __webpack_require__(25);
+const config_1 = __webpack_require__(22);
+const jwt_1 = __webpack_require__(26);
 const prisma_service_1 = __webpack_require__(6);
-const public_decorator_1 = __webpack_require__(26);
+const public_decorator_1 = __webpack_require__(27);
 const core_1 = __webpack_require__(1);
 let AuthGuard = class AuthGuard {
     constructor(jwtService, configService, prismaService, reflector) {
@@ -1418,13 +1444,13 @@ exports.AuthGuard = AuthGuard = __decorate([
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ ((module) => {
 
 module.exports = require("@nestjs/jwt");
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
@@ -1437,7 +1463,7 @@ exports.Public = Public;
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1450,11 +1476,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GuardModule = void 0;
 const common_1 = __webpack_require__(3);
-const auth_guard_1 = __webpack_require__(24);
-const jwt_1 = __webpack_require__(25);
-const config_1 = __webpack_require__(21);
-const prisma_module_1 = __webpack_require__(23);
-const roles_guard_1 = __webpack_require__(28);
+const auth_guard_1 = __webpack_require__(25);
+const jwt_1 = __webpack_require__(26);
+const config_1 = __webpack_require__(22);
+const prisma_module_1 = __webpack_require__(24);
+const roles_guard_1 = __webpack_require__(29);
 let GuardModule = class GuardModule {
 };
 exports.GuardModule = GuardModule;
@@ -1479,7 +1505,7 @@ exports.GuardModule = GuardModule = __decorate([
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1495,11 +1521,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.RolesGuard = void 0;
-const account_1 = __webpack_require__(29);
+const account_1 = __webpack_require__(30);
 const common_1 = __webpack_require__(3);
 const core_1 = __webpack_require__(1);
-const public_decorator_1 = __webpack_require__(26);
-const roles_decorator_1 = __webpack_require__(30);
+const public_decorator_1 = __webpack_require__(27);
+const roles_decorator_1 = __webpack_require__(31);
 let RolesGuard = class RolesGuard {
     constructor(reflector) {
         this.reflector = reflector;
@@ -1513,11 +1539,11 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const requiredRolesController = this.reflector.get(roles_decorator_1.Roles, context.getClass());
-        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [context.getHandler(), context.getClass()]);
-        const allRequiredRoles = [
-            ...(requiredRolesController || []),
-            ...(requiredRoles || []),
-        ];
+        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        const allRequiredRoles = [...(requiredRolesController || []), ...(requiredRoles || [])];
         if (!allRequiredRoles.length) {
             return true;
         }
@@ -1537,7 +1563,7 @@ exports.RolesGuard = RolesGuard = __decorate([
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ ((__unused_webpack_module, exports) => {
 
 
@@ -1552,6 +1578,7 @@ var UserRole;
 (function (UserRole) {
     UserRole[UserRole["USER"] = 0] = "USER";
     UserRole[UserRole["ADMIN"] = 1] = "ADMIN";
+    UserRole[UserRole["MODERATOR"] = 2] = "MODERATOR";
 })(UserRole || (exports.UserRole = UserRole = {}));
 exports.ROLES_KEY = 'roles-guard-key';
 var LeaderboardTypes;
@@ -1563,20 +1590,20 @@ var LeaderboardTypes;
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Roles = void 0;
-const account_1 = __webpack_require__(29);
+const account_1 = __webpack_require__(30);
 const common_1 = __webpack_require__(3);
 const Roles = (...roles) => (0, common_1.SetMetadata)(account_1.ROLES_KEY, roles);
 exports.Roles = Roles;
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1589,8 +1616,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GameEventsModule = void 0;
 const common_1 = __webpack_require__(3);
-const game_gateway_1 = __webpack_require__(32);
-const socket_module_1 = __webpack_require__(37);
+const game_gateway_1 = __webpack_require__(33);
+const socket_module_1 = __webpack_require__(38);
 let GameEventsModule = class GameEventsModule {
 };
 exports.GameEventsModule = GameEventsModule;
@@ -1603,7 +1630,7 @@ exports.GameEventsModule = GameEventsModule = __decorate([
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1623,12 +1650,12 @@ var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GameGateway = void 0;
 const common_1 = __webpack_require__(3);
-const config_1 = __webpack_require__(21);
-const websockets_1 = __webpack_require__(33);
-const socket_io_1 = __webpack_require__(34);
-const create_game_interface_1 = __webpack_require__(35);
+const config_1 = __webpack_require__(22);
+const websockets_1 = __webpack_require__(34);
+const socket_io_1 = __webpack_require__(35);
+const create_game_interface_1 = __webpack_require__(36);
 const socket_service_1 = __webpack_require__(11);
-const add_drawing_part_interface_1 = __webpack_require__(36);
+const add_drawing_part_interface_1 = __webpack_require__(37);
 const publicRoom = 'public-room';
 let GameGateway = class GameGateway {
     constructor(socketService) {
@@ -1779,24 +1806,16 @@ exports.GameGateway = GameGateway = __decorate([
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ ((module) => {
 
 module.exports = require("@nestjs/websockets");
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ ((module) => {
 
 module.exports = require("socket.io");
-
-/***/ }),
-/* 35 */
-/***/ ((__unused_webpack_module, exports) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
 
 /***/ }),
 /* 36 */
@@ -1808,6 +1827,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 /* 37 */
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+/* 38 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -1871,7 +1898,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core_1 = __webpack_require__(1);
 const game_module_1 = __webpack_require__(2);
 const common_1 = __webpack_require__(3);
-const config_1 = __webpack_require__(21);
+const config_1 = __webpack_require__(22);
 async function bootstrap() {
     const app = await core_1.NestFactory.create(game_module_1.GameModule);
     app.useGlobalPipes(new common_1.ValidationPipe());

@@ -10,9 +10,6 @@ import { GamePlayerModule } from 'apps/game/src/modules/game-player/game-player.
 @Module({
   imports: [GuardModule, PrismaModule, GamePlayerModule],
   controllers: [DrawingMessageController],
-  providers: [
-    { provide: APP_GUARD, useClass: AuthGuard },
-    DrawingMessageService,
-  ],
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }, DrawingMessageService],
 })
 export class DrawingMessageModule {}

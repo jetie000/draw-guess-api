@@ -1,14 +1,8 @@
 import { DrawingMessage, Prisma, User } from '@prisma/client';
 import { MILLISECONDS_IN_A_DAY } from './constants';
-import {
-  AchievementsTypeIds,
-  QuickGuessSeconds,
-} from '@app/typings/enums/achievements';
+import { AchievementsTypeIds, QuickGuessSeconds } from '@app/typings/enums/achievements';
 
-export const calculateAchievementLevel = (
-  amount: number,
-  levelAmounts: number[]
-) => {
+export const calculateAchievementLevel = (amount: number, levelAmounts: number[]) => {
   for (let i = 0; i < levelAmounts.length; i++) {
     if (amount < levelAmounts[i]) {
       return i;
@@ -24,9 +18,7 @@ export const getWonGamesByType = (
   }>[]
 ) => {
   const gamesWon = games.filter((game) => {
-    const playersSorted = game.players
-      .slice()
-      .sort((p1, p2) => p2.points - p1.points);
+    const playersSorted = game.players.slice().sort((p1, p2) => p2.points - p1.points);
 
     const yourPlayer = playersSorted.find((p) => p.userId === user.id);
     if (!yourPlayer || yourPlayer.points === 0) {
@@ -86,9 +78,8 @@ export const getConsecutiveDaysPlaying = (
 export const getMyMessagesStats = (drawingMessages: DrawingMessage[]) => {
   return {
     [AchievementsTypeIds.WordsGuessed]: drawingMessages.length,
-    [AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter(
-      (message) => message.isFirst
-    ).length,
+    [AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter((message) => message.isFirst)
+      .length,
     [AchievementsTypeIds.QuickQuesses]: drawingMessages.filter(
       (message) => message.secondsPassedAfterRound <= QuickGuessSeconds
     ).length,

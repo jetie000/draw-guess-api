@@ -32,17 +32,16 @@ export class AchievementsService {
       where: { sender: { userId: user.id }, isGuessed: true },
     });
 
-    const messagesMyDrawingGuessed =
-      await this.prismaService.drawingMessage.findMany({
-        where: {
-          isGuessed: true,
-          drawing: {
-            gamePlayer: {
-              userId: user.id,
-            },
+    const messagesMyDrawingGuessed = await this.prismaService.drawingMessage.findMany({
+      where: {
+        isGuessed: true,
+        drawing: {
+          gamePlayer: {
+            userId: user.id,
           },
         },
-      });
+      },
+    });
 
     return {
       achievements: await this.prismaService.achievement.findMany({
@@ -67,8 +66,7 @@ export class AchievementsService {
   }
 
   async createEmptyAchievements(user: Pick<User, 'id' | 'experience'>) {
-    const achievementsTypes =
-      await this.prismaService.achievementType.findMany();
+    const achievementsTypes = await this.prismaService.achievementType.findMany();
 
     return this.prismaService.achievement.createMany({
       data: achievementsTypes.map((type) => ({
@@ -79,16 +77,12 @@ export class AchievementsService {
     });
   }
 
-  async recalculateAchievements(
-    user: Pick<User, 'id' | 'experience'>,
-    gameId: number
-  ) {
+  async recalculateAchievements(user: Pick<User, 'id' | 'experience'>, gameId: number) {
     const currentAchievements = await this.prismaService.achievement.findMany({
       where: { userId: user.id },
     });
 
-    const achievementsTypes =
-      await this.prismaService.achievementType.findMany();
+    const achievementsTypes = await this.prismaService.achievementType.findMany();
 
     const games = await this.prismaService.game.findMany({
       where: { players: { some: { userId: user.id } } },
@@ -100,17 +94,16 @@ export class AchievementsService {
       where: { sender: { userId: user.id }, isGuessed: true },
     });
 
-    const messagesMyDrawingGuessed =
-      await this.prismaService.drawingMessage.findMany({
-        where: {
-          isGuessed: true,
-          drawing: {
-            gamePlayer: {
-              userId: user.id,
-            },
+    const messagesMyDrawingGuessed = await this.prismaService.drawingMessage.findMany({
+      where: {
+        isGuessed: true,
+        drawing: {
+          gamePlayer: {
+            userId: user.id,
           },
         },
-      });
+      },
+    });
 
     const earnedAchievements = (
       await Promise.all(
@@ -121,15 +114,8 @@ export class AchievementsService {
           ...getMyMessagesStats(myMessages),
           [AchievementsTypeIds.DrawingGuesses]: messagesMyDrawingGuessed.length,
         }).map((value) => {
-          const achievementType = achievementsTypes.find(
-            (type) => type.id === Number(value[0])
-          );
-          return this.recalculateAchievement(
-            currentAchievements,
-            user,
-            value[1],
-            achievementType
-          );
+          const achievementType = achievementsTypes.find((type) => type.id === Number(value[0]));
+          return this.recalculateAchievement(currentAchievements, user, value[1], achievementType);
         })
       )
     ).flat();
@@ -140,8 +126,7 @@ export class AchievementsService {
         data: {
           money: {
             increment: earnedAchievements.reduce(
-              (acc, achievement) =>
-                acc + moneyForAchievementAmountByLevel[achievement.level - 1],
+              (acc, achievement) => acc + moneyForAchievementAmountByLevel[achievement.level - 1],
               0
             ),
           },

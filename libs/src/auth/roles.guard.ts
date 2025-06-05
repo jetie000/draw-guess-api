@@ -1,10 +1,5 @@
 import { ROLES_KEY, UserRole } from '@app/typings/enums/account';
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { Roles } from './roles.decorator';
@@ -21,18 +16,12 @@ export class RolesGuard implements CanActivate {
     if (isPublic) {
       return true;
     }
-    const requiredRolesController = this.reflector.get(
-      Roles,
-      context.getClass()
-    );
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()]
-    );
-    const allRequiredRoles = [
-      ...(requiredRolesController || []),
-      ...(requiredRoles || []),
-    ];
+    const requiredRolesController = this.reflector.get(Roles, context.getClass());
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    const allRequiredRoles = [...(requiredRolesController || []), ...(requiredRoles || [])];
 
     if (!allRequiredRoles.length) {
       return true;

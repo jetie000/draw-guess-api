@@ -6,6 +6,7 @@ export enum AccountType {
 export enum UserRole {
   USER = 0,
   ADMIN = 1,
+  MODERATOR = 2,
 }
 
 export const ROLES_KEY = 'roles-guard-key';

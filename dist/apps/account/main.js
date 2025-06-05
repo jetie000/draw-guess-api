@@ -134,7 +134,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AccountController = void 0;
 const common_1 = __webpack_require__(3);
@@ -160,7 +160,8 @@ let AccountController = class AccountController {
     async signIn(signInDto, response) {
         const tokens = await this.accountService.signIn(signInDto);
         response.cookie('refreshToken', tokens.refreshToken, {
-            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) * constants_1.MILLISECONDS_IN_A_DAY,
+            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+                constants_1.MILLISECONDS_IN_A_DAY,
             httpOnly: true,
             secure: true,
             sameSite: 'none',
@@ -170,7 +171,8 @@ let AccountController = class AccountController {
     async signInGoogle(googleToken, response) {
         const tokens = await this.accountService.signInGoogle(googleToken.accessToken);
         response.cookie('refreshToken', tokens.refreshToken, {
-            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) * constants_1.MILLISECONDS_IN_A_DAY,
+            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+                constants_1.MILLISECONDS_IN_A_DAY,
             httpOnly: true,
             secure: true,
             sameSite: 'none',
@@ -193,7 +195,8 @@ let AccountController = class AccountController {
         const refreshToken = request.cookies['refreshToken'];
         const tokens = await this.accountService.refreshToken(refreshToken);
         response.cookie('refreshToken', tokens.refreshToken, {
-            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) * constants_1.MILLISECONDS_IN_A_DAY,
+            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+                constants_1.MILLISECONDS_IN_A_DAY,
             httpOnly: true,
             secure: true,
             sameSite: 'none',
@@ -223,19 +226,20 @@ let AccountController = class AccountController {
             username: patchUserDto.username,
         });
         response.cookie('refreshToken', tokens.refreshToken, {
-            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) * constants_1.MILLISECONDS_IN_A_DAY,
+            maxAge: Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+                constants_1.MILLISECONDS_IN_A_DAY,
             httpOnly: true,
             secure: true,
             sameSite: 'none',
         });
         return { accessToken: tokens.accessToken };
     }
-    patchUserAdmin(id, patchUserDto) {
+    patchUserAdmin(id, patchUserDto, request) {
         const numberId = parseInt(id);
         if ((0, class_validator_1.isInt)(numberId) === false) {
             throw new common_1.BadRequestException('Invalid id');
         }
-        return this.accountService.patchUserAdmin(numberId, patchUserDto);
+        return this.accountService.patchUserAdmin(numberId, patchUserDto, request.user);
     }
     getLeaderboard(type, days) {
         const daysNumber = parseInt(days);
@@ -322,7 +326,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)('all'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN, account_1.UserRole.MODERATOR),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -340,11 +344,12 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN, account_1.UserRole.MODERATOR),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, typeof (_r = typeof update_user_dto_1.UpdateUserAdminDto !== "undefined" && update_user_dto_1.UpdateUserAdminDto) === "function" ? _r : Object]),
+    __metadata("design:paramtypes", [String, typeof (_r = typeof update_user_dto_1.UpdateUserAdminDto !== "undefined" && update_user_dto_1.UpdateUserAdminDto) === "function" ? _r : Object, typeof (_s = typeof express_1.Request !== "undefined" && express_1.Request) === "function" ? _s : Object]),
     __metadata("design:returntype", void 0)
 ], AccountController.prototype, "patchUserAdmin", null);
 __decorate([
@@ -667,10 +672,7 @@ let AccountService = class AccountService {
             },
         });
         const winners = games.reduce((acc, game) => {
-            return [
-                ...acc,
-                ...game.players.filter((p) => p.points === game.players[0].points),
-            ];
+            return [...acc, ...game.players.filter((p) => p.points === game.players[0].points)];
         }, []);
         const userWinners = winners.reduce((acc, player) => ({
             ...acc,
@@ -756,17 +758,28 @@ let AccountService = class AccountService {
         });
         return tokens;
     }
-    async patchUserAdmin(id, patchUserDto) {
-        const user = await this.prismaService.user.findUnique({
+    async patchUserAdmin(id, patchUserDto, user) {
+        const userPatching = await this.prismaService.user.findUnique({
             where: { id },
         });
-        if (!user) {
+        if (!userPatching) {
             throw new common_1.NotFoundException('User not found');
+        }
+        if (userPatching.role === account_1.UserRole.MODERATOR) {
+            if (user.role !== account_1.UserRole.MODERATOR) {
+                throw new common_1.ForbiddenException('You cannot change moderator');
+            }
+            if (Number(patchUserDto.role) !== account_1.UserRole.MODERATOR) {
+                throw new common_1.ForbiddenException('You cannot change moderator role');
+            }
+            if (!Boolean(patchUserDto.access)) {
+                throw new common_1.ForbiddenException('You cannot block moderator');
+            }
         }
         const tokens = await this.generateTokens({
             username: patchUserDto.username,
-            email: user.email,
-            type: user.type,
+            email: userPatching.email,
+            type: userPatching.type,
         });
         const typedDto = {
             username: patchUserDto.username,
@@ -776,7 +789,8 @@ let AccountService = class AccountService {
                 (await (0, bcrypt_1.hash)(patchUserDto.password, this.configService.get('HASH_SALT'))),
             refreshToken: tokens.refreshToken,
         };
-        if (![0, 1].includes(typedDto.role)) {
+        if (![account_1.UserRole.USER, account_1.UserRole.ADMIN].includes(typedDto.role) &&
+            userPatching.role !== account_1.UserRole.MODERATOR) {
             throw new common_1.BadRequestException('Wrong role');
         }
         return this.prismaService.user.update({
@@ -956,6 +970,7 @@ var UserRole;
 (function (UserRole) {
     UserRole[UserRole["USER"] = 0] = "USER";
     UserRole[UserRole["ADMIN"] = 1] = "ADMIN";
+    UserRole[UserRole["MODERATOR"] = 2] = "MODERATOR";
 })(UserRole || (exports.UserRole = UserRole = {}));
 exports.ROLES_KEY = 'roles-guard-key';
 var LeaderboardTypes;
@@ -1147,9 +1162,7 @@ const calculateAchievementLevel = (amount, levelAmounts) => {
 exports.calculateAchievementLevel = calculateAchievementLevel;
 const getWonGamesByType = (user, games) => {
     const gamesWon = games.filter((game) => {
-        const playersSorted = game.players
-            .slice()
-            .sort((p1, p2) => p2.points - p1.points);
+        const playersSorted = game.players.slice().sort((p1, p2) => p2.points - p1.points);
         const yourPlayer = playersSorted.find((p) => p.userId === user.id);
         if (!yourPlayer || yourPlayer.points === 0) {
             return false;
@@ -1193,7 +1206,8 @@ exports.getConsecutiveDaysPlaying = getConsecutiveDaysPlaying;
 const getMyMessagesStats = (drawingMessages) => {
     return {
         [achievements_1.AchievementsTypeIds.WordsGuessed]: drawingMessages.length,
-        [achievements_1.AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter((message) => message.isFirst).length,
+        [achievements_1.AchievementsTypeIds.FirstTryGuesses]: drawingMessages.filter((message) => message.isFirst)
+            .length,
         [achievements_1.AchievementsTypeIds.QuickQuesses]: drawingMessages.filter((message) => message.secondsPassedAfterRound <= achievements_1.QuickGuessSeconds).length,
     };
 };
@@ -1580,11 +1594,11 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const requiredRolesController = this.reflector.get(roles_decorator_1.Roles, context.getClass());
-        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [context.getHandler(), context.getClass()]);
-        const allRequiredRoles = [
-            ...(requiredRolesController || []),
-            ...(requiredRoles || []),
-        ];
+        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        const allRequiredRoles = [...(requiredRolesController || []), ...(requiredRoles || [])];
         if (!allRequiredRoles.length) {
             return true;
         }

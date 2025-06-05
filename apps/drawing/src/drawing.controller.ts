@@ -1,12 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
 import { DrawingService } from './drawing.service';
 import { Request } from 'express';
 import { AddDrawingPartDto } from './dto/add-drawing-part.dto';

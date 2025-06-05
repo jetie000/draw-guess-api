@@ -36,16 +36,12 @@ export class AccountController {
 
   @Post('login')
   @HttpCode(200)
-  async signIn(
-    @Body() signInDto: SignInDto,
-    @Res({ passthrough: true }) response: Response
-  ) {
+  async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) response: Response) {
     const tokens = await this.accountService.signIn(signInDto);
     response.cookie('refreshToken', tokens.refreshToken, {
       maxAge:
-        Number(
-          String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)
-        ) * MILLISECONDS_IN_A_DAY,
+        Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+        MILLISECONDS_IN_A_DAY,
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -59,14 +55,11 @@ export class AccountController {
     @Body() googleToken: SignInGoogleDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const tokens = await this.accountService.signInGoogle(
-      googleToken.accessToken
-    );
+    const tokens = await this.accountService.signInGoogle(googleToken.accessToken);
     response.cookie('refreshToken', tokens.refreshToken, {
       maxAge:
-        Number(
-          String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)
-        ) * MILLISECONDS_IN_A_DAY,
+        Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+        MILLISECONDS_IN_A_DAY,
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -97,18 +90,14 @@ export class AccountController {
   }
 
   @Get('refresh-token')
-  async refreshToken(
-    @Req() request: Request,
-    @Res({ passthrough: true }) response: Response
-  ) {
+  async refreshToken(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies['refreshToken'];
     const tokens = await this.accountService.refreshToken(refreshToken);
 
     response.cookie('refreshToken', tokens.refreshToken, {
       maxAge:
-        Number(
-          String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)
-        ) * MILLISECONDS_IN_A_DAY,
+        Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+        MILLISECONDS_IN_A_DAY,
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -136,7 +125,7 @@ export class AccountController {
 
   @Get('all')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   getAll() {
     return this.accountService.getAll();
   }
@@ -153,9 +142,8 @@ export class AccountController {
     });
     response.cookie('refreshToken', tokens.refreshToken, {
       maxAge:
-        Number(
-          String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)
-        ) * MILLISECONDS_IN_A_DAY,
+        Number(String(this.configService.get('JWT_REFRESH_EXPIRES_IN')).slice(0, -1)) *
+        MILLISECONDS_IN_A_DAY,
       httpOnly: true,
       secure: true,
       sameSite: 'none',
@@ -165,16 +153,17 @@ export class AccountController {
 
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   patchUserAdmin(
     @Param('id') id: string,
-    @Body() patchUserDto: UpdateUserAdminDto
+    @Body() patchUserDto: UpdateUserAdminDto,
+    @Req() request: Request
   ) {
     const numberId = parseInt(id);
     if (isInt(numberId) === false) {
       throw new BadRequestException('Invalid id');
     }
-    return this.accountService.patchUserAdmin(numberId, patchUserDto);
+    return this.accountService.patchUserAdmin(numberId, patchUserDto, request.user);
   }
 
   @Get('leaderboard/:type/:days')

@@ -309,9 +309,7 @@ let DrawingService = class DrawingService {
         }
         const timePassedAfterGameStart = Date.now() - game.startDate.getTime();
         const timePassedAfterRoundStart = timePassedAfterGameStart -
-            (game.currentRound - 1) *
-                (game.roundDuration + game_1.breakSecondsNumber) *
-                1000;
+            (game.currentRound - 1) * (game.roundDuration + game_1.breakSecondsNumber) * 1000;
         if (timePassedAfterRoundStart > game.roundDuration * 1000) {
             throw new common_1.BadRequestException('Game in break phase');
         }
@@ -388,9 +386,7 @@ let DrawingService = class DrawingService {
             ? {
                 ...fullDrawing,
                 wordId: undefined,
-                word: user.id === game.players[currentPlayerIndex].user.id
-                    ? fullDrawing.word
-                    : undefined,
+                word: user.id === game.players[currentPlayerIndex].user.id ? fullDrawing.word : undefined,
             }
             : null;
     }
@@ -806,11 +802,11 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const requiredRolesController = this.reflector.get(roles_decorator_1.Roles, context.getClass());
-        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [context.getHandler(), context.getClass()]);
-        const allRequiredRoles = [
-            ...(requiredRolesController || []),
-            ...(requiredRoles || []),
-        ];
+        const requiredRoles = this.reflector.getAllAndOverride(account_1.ROLES_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        const allRequiredRoles = [...(requiredRolesController || []), ...(requiredRoles || [])];
         if (!allRequiredRoles.length) {
             return true;
         }
@@ -845,6 +841,7 @@ var UserRole;
 (function (UserRole) {
     UserRole[UserRole["USER"] = 0] = "USER";
     UserRole[UserRole["ADMIN"] = 1] = "ADMIN";
+    UserRole[UserRole["MODERATOR"] = 2] = "MODERATOR";
 })(UserRole || (exports.UserRole = UserRole = {}));
 exports.ROLES_KEY = 'roles-guard-key';
 var LeaderboardTypes;
@@ -989,7 +986,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DrawingWordController.prototype, "updateDrawingWord", null);
 exports.DrawingWordController = DrawingWordController = __decorate([
-    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN, account_1.UserRole.MODERATOR),
     (0, common_1.Controller)('drawing-word'),
     __metadata("design:paramtypes", [typeof (_a = typeof drawing_word_service_1.DrawingWordService !== "undefined" && drawing_word_service_1.DrawingWordService) === "function" ? _a : Object])
 ], DrawingWordController);
@@ -1198,7 +1195,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], DrawingWordTypeController.prototype, "updateDrawingWordType", null);
 exports.DrawingWordTypeController = DrawingWordTypeController = __decorate([
-    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(account_1.UserRole.ADMIN, account_1.UserRole.MODERATOR),
     (0, common_1.Controller)('drawing-word-type'),
     __metadata("design:paramtypes", [typeof (_a = typeof drawing_word_type_service_1.DrawingWordTypeService !== "undefined" && drawing_word_type_service_1.DrawingWordTypeService) === "function" ? _a : Object])
 ], DrawingWordTypeController);
@@ -1313,10 +1310,7 @@ exports.DrawingMessageModule = DrawingMessageModule = __decorate([
     (0, common_1.Module)({
         imports: [guard_module_1.GuardModule, _app_1.PrismaModule, game_player_module_1.GamePlayerModule],
         controllers: [drawing_message_controller_1.DrawingMessageController],
-        providers: [
-            { provide: core_1.APP_GUARD, useClass: auth_guard_1.AuthGuard },
-            drawing_message_service_1.DrawingMessageService,
-        ],
+        providers: [{ provide: core_1.APP_GUARD, useClass: auth_guard_1.AuthGuard }, drawing_message_service_1.DrawingMessageService],
     })
 ], DrawingMessageModule);
 
@@ -1445,9 +1439,7 @@ let DrawingMessageService = class DrawingMessageService {
         }
         const timePassedAfterGameStart = Date.now() - drawing.game.startDate.getTime();
         const timePassedAfterRoundStart = timePassedAfterGameStart -
-            (drawing.game.currentRound - 1) *
-                (drawing.game.roundDuration + game_1.breakSecondsNumber) *
-                1000;
+            (drawing.game.currentRound - 1) * (drawing.game.roundDuration + game_1.breakSecondsNumber) * 1000;
         if (timePassedAfterRoundStart > drawing.game.roundDuration * 1000) {
             throw new common_1.BadRequestException('Game in break phase');
         }
@@ -1480,10 +1472,7 @@ let DrawingMessageService = class DrawingMessageService {
             isGuessed,
             updatedPoints: updatedPoints,
             guessedLetters: drawing.game.isSimplified
-                ? (0, messages_1.getGuessedLettersFromMessages)([
-                    ...messages.map((message) => message.message),
-                    drawingMessage.message,
-                ], drawing.word.word)
+                ? (0, messages_1.getGuessedLettersFromMessages)([...messages.map((message) => message.message), drawingMessage.message], drawing.word.word)
                 : null,
             message: await this.prismaService.drawingMessage.create({
                 data: {
@@ -1525,9 +1514,7 @@ let DrawingMessageService = class DrawingMessageService {
         }
         const timePassedAfterGameStart = Date.now() - drawing.game.startDate.getTime();
         const timePassedAfterRoundStart = timePassedAfterGameStart -
-            (drawing.game.currentRound - 1) *
-                (drawing.game.roundDuration + game_1.breakSecondsNumber) *
-                1000;
+            (drawing.game.currentRound - 1) * (drawing.game.roundDuration + game_1.breakSecondsNumber) * 1000;
         const roundPartPassed = timePassedAfterRoundStart / (drawing.game.roundDuration * 1000);
         if (timePassedAfterRoundStart > drawing.game.roundDuration * 1000) {
             throw new common_1.BadRequestException('Game in break phase');
@@ -1561,10 +1548,7 @@ let DrawingMessageService = class DrawingMessageService {
         const pointsToAddGuesser = (0, game_2.calculatePoints)(roundPartPassed);
         const pointsToAddDrawer = (0, game_2.calculatePoints)(roundPartPassed, true);
         let updatedPoints = gamePlayer.points;
-        const guessedLetters = (0, messages_1.getGuessedLettersFromMessages)([
-            ...messages.map((message) => message.message),
-            messageWithOpenedLetter.join(''),
-        ], drawing.word.word);
+        const guessedLetters = (0, messages_1.getGuessedLettersFromMessages)([...messages.map((message) => message.message), messageWithOpenedLetter.join('')], drawing.word.word);
         if (guessedLetters.every((letter) => letter !== null)) {
             isGuessed = true;
             const [guesser] = await Promise.all([
@@ -1671,10 +1655,8 @@ const game_1 = __webpack_require__(9);
 exports.MaxGameDrawings = 12;
 const calculatePoints = (roundPassedPart, isDrawer = false) => {
     return isDrawer
-        ? game_1.defaultPointsGuessedForDrawer +
-            Math.round(roundPassedPart * game_1.extraPointsGuessedForDrawer)
-        : game_1.defaultPointsForGuess +
-            Math.round(roundPassedPart * game_1.extraMaxPointsForGuess);
+        ? game_1.defaultPointsGuessedForDrawer + Math.round(roundPassedPart * game_1.extraPointsGuessedForDrawer)
+        : game_1.defaultPointsForGuess + Math.round(roundPassedPart * game_1.extraMaxPointsForGuess);
 };
 exports.calculatePoints = calculatePoints;
 
